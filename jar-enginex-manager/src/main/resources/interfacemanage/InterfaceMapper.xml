@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.interfacemanage.mapper.InterfaceMapper">
+
+    <resultMap type="com.risk.riskmanage.interfacemanage.model.InterfaceInfo" id="InterfaceMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="url" column="url" jdbcType="VARCHAR"/>
+        <result property="method" column="method" jdbcType="VARCHAR"/>
+        <result property="requestHeaders" column="request_headers" jdbcType="VARCHAR"/>
+        <result property="requestBody" column="request_body" jdbcType="VARCHAR"/>
+        <result property="responseBody" column="response_body" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="creator" column="creator" jdbcType="INTEGER"/>
+        <result property="modifier" column="modifier" jdbcType="INTEGER"/>
+        <result property="organId" column="organ_id" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="requestType" column="request_type" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <update id="updateStatus" >
+        update riskmanage.t_field_interface set status = #{status}
+        where id in
+        <foreach collection="ids" item="interfaceId" open="(" separator="," close=")">
+            #{interfaceId}
+        </foreach>
+    </update>
+
+    <!--查询单个-->
+    <select id="queryLimit" resultMap="InterfaceMap">
+        select *
+        from riskmanage.t_field_interface
+        limit #{start},#{size}
+    </select>
+
+    <select id = "queryInterfaceList" parameterType="com.risk.riskmanage.interfacemanage.model.InterfaceInfo"  resultMap="InterfaceMap">
+        select *
+        from riskmanage.t_field_interface
+        <where>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name}
+            </if>
+            <if test="url != null and url != ''">
+                and url = #{url}
+            </if>
+            <if test="method != null and method != ''">
+                and method = #{method}
+            </if>
+            <if test="request_headers != null">
+                and request_headers = #{request_headers}
+            </if>
+            <if test="request_body != null">
+                and request_body = #{request_body}
+            </if>
+            <if test="response_body != null">
+                and response_body = #{response_body}
+            </if>
+            <if test="creator != null">
+                and creator = #{creator}
+            </if>
+            <if test="modifier != null">
+                and modifier = #{modifier}
+            </if>
+            <if test="organ_id != null">
+                and organ_id = #{organ_id}
+            </if>
+        </where>
+    </select>
+
+</mapper>
+

@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.knowledge.mapper.KnowledgeTreeMapper">
+    <cache></cache>
+    <resultMap type="com.risk.riskmanage.knowledge.model.KnowledgeTree" id="knowledgeTreeMap">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="user_id" property="userId"/>
+        <result column="organ_id" property="organId"/>
+        <result column="engine_id" property="engineId"/>
+        <result column="status" property="status"/>
+        <result column="type" property="type"/>
+        <result column="tree_type" property="treeType"/>
+        <result column="created" property="created"/>
+        <result column="updated" property="updated"/>
+    </resultMap>
+
+    <sql id="Base_Column">
+        id,
+        name,   
+	    parent_id,    
+	    user_id,
+	    organ_id,
+	    engine_id,
+	    status,
+	    type,
+	    tree_type,
+	    created,
+	    updated       
+    </sql>
+
+    <sql id="Base_Column_1">
+        k.id,
+        k.name,   
+	    k.parent_id,    
+	    k.user_id,
+	    k.organ_id,
+	    k.engine_id,
+	    k.status,
+	    k.type,
+	    k.tree_type,
+	    k.created,
+	    k.updated       
+    </sql>
+
+    <select id="getTreeList" parameterType="Map" resultMap="knowledgeTreeMap">
+        <if test="type == 2">
+            select
+            <include refid="Base_Column"/>
+            from (
+        </if>
+        <if test="type == 2">
+            select
+            <include refid="Base_Column"/>
+            from t_knowledge_tree
+            where 1=1
+            <if test="parentId != null">
+                and parent_id = #{parentId}
+            </if>
+            <if test="status != null">
+                and status in
+                <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="tree_type != null">
+                and tree_type in
+                <foreach collection="tree_type" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            and organ_id = #{organId}
+            and type = 1
+            and id in (select knowledge_tree_id from t_engine_knowledge_tree_rel td where engine_id = #{engineId})
+            union
+        </if>
+        select
+        <include refid="Base_Column"/>
+        from t_knowledge_tree
+        where 1=1
+        <if test="parentId != null">
+            and parent_id = #{parentId}
+        </if>
+        <if test="status != null">
+            and status in
+            <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="tree_type != null">
+            and tree_type in
+            <foreach collection="tree_type" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="type == 0">
+            and type = 0
+        </if>
+        <if test="type == 1">
+            and organ_id = #{organId}
+            and type = 1
+            <if test="sort == true">
+                order by tree_type,id
+            </if>
+        </if>
+        <if test="type == 2">
+            and engine_id = #{engineId}
+            and type = 2
+            ) y
+            <if test="sort == true">
+                order by y.tree_type,y.id
+            </if>
+        </if>
+    </select>
+
+    <!--  新加的 评分卡树  -->
+    <select id="getTreeListV2" parameterType="Map" resultMap="knowledgeTreeMap">
+        select
+        <include refid="Base_Column"/>
+        from t_knowledge_tree
+        where 1=1
+        <if test="parentId != null">
+            and parent_id = #{parentId}
+        </if>
+        <if test="status != null">
+            and status in
+            <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="tree_type != null">
+            and tree_type in
+            <foreach collection="tree_type" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and organ_id = #{organId}
+        and type = #{type}
+        <if test="sort == true">
+            order by tree_type,id
+        </if>
+
+    </select>
+
+    <select id="getTreeDataForEngine" parameterType="Map" resultMap="knowledgeTreeMap">
+        <if test="type == 2">
+            select
+            <include refid="Base_Column"/>
+            from (
+        </if>
+        <if test="type == 2">
+            select
+            <include refid="Base_Column_1"/>
+            from t_knowledge_tree k
+            where 1=1
+            <if test="parentId != null">
+                and k.parent_id = #{parentId}
+            </if>
+            <if test="status != null">
+                and k.status in
+                <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="tree_type != null">
+                and k.tree_type in
+                <foreach collection="tree_type" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            and k.organ_id = #{organId}
+            and k.type = 1
+            and k.id in (select knowledge_tree_id from t_engine_knowledge_tree_rel td where td.engine_id = #{engineId})
+            and (select count(r.parent_id) from t_rule r where r.parent_id = k.id <if
+                test="complexType != null and complexType == 1">and r.rule_type=1</if>) &gt; 0
+            union
+        </if>
+        select
+        <include refid="Base_Column_1"/>
+        from t_knowledge_tree k
+        where 1=1
+        <if test="parentId != null">
+            and k.parent_id = #{parentId}
+        </if>
+        <if test="status != null">
+            and k.status in
+            <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="tree_type != null">
+            and k.tree_type in
+            <foreach collection="tree_type" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="type == 0">
+            and k.type = 0
+        </if>
+        <if test="type == 1">
+            and k.organ_id = #{organId}
+            and k.type = 1
+            <if test="sort == true">
+                order by k.tree_type,k.id
+            </if>
+        </if>
+        <if test="type == 2">
+            and k.engine_id = #{engineId}
+            and k.type = 2
+            and (select count(r.parent_id) from t_rule r where r.parent_id = k.id  <if
+                test="complexType != null and complexType == 1">and r.rule_type=1</if>) &gt; 0
+            ) y
+            <if test="sort == true">
+                order by y.tree_type,y.id
+            </if>
+        </if>
+    </select>
+
+    <select id="getTreeDataForEngineV2" parameterType="Map" resultMap="knowledgeTreeMap">
+        <if test="type == 2">
+            select
+            <include refid="Base_Column"/>
+            from (
+        </if>
+        <if test="type == 2">
+            select
+            <include refid="Base_Column_1"/>
+            from t_knowledge_tree k
+            where 1=1
+            <if test="parentId != null">
+                and k.parent_id = #{parentId}
+            </if>
+            <if test="status != null">
+                and k.status in
+                <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="tree_type != null">
+                and k.tree_type in
+                <foreach collection="tree_type" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            and k.organ_id = #{organId}
+            and k.type = 1
+            and k.id in (select knowledge_tree_id from t_engine_knowledge_tree_rel td)
+            and (select count(r.parent_id) from t_rule r where r.parent_id = k.id <if
+                test="complexType != null and complexType == 1">and r.rule_type=1</if>) &gt; 0
+            union
+        </if>
+        select
+        <include refid="Base_Column_1"/>
+        from t_knowledge_tree k
+        where 1=1
+        <if test="parentId != null">
+            and k.parent_id = #{parentId}
+        </if>
+        <if test="status != null">
+            and k.status in
+            <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="tree_type != null">
+            and k.tree_type in
+            <foreach collection="tree_type" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="type == 0">
+            and k.type = 0
+        </if>
+        <if test="type == 1">
+            and k.organ_id = #{organId}
+            and k.type = 1
+            <if test="sort == true">
+                order by k.tree_type,k.id
+            </if>
+        </if>
+        <if test="type == 2">
+            and k.type = 2
+            and (select count(r.parent_id) from t_rule r where r.parent_id = k.id  <if
+                test="complexType != null and complexType == 1">and r.rule_type=1</if>) &gt; 0
+            ) y
+            <if test="sort == true">
+                order by y.tree_type,y.id
+            </if>
+        </if>
+    </select>
+
+
+    <insert id="insertSelective" parameterType="knowledgeTree" useGeneratedKeys="true" keyProperty="id">
+        insert into t_knowledge_tree (name,parent_id,user_id,
+        <if test="organId != null">
+            organ_id,
+        </if>
+        <if test="engineId != null">
+            engine_id,
+        </if>
+        status,type,tree_type,created,updated)
+        values(#{name},#{parentId},#{userId},
+        <if test="organId != null">
+            #{organId},
+        </if>
+        <if test="engineId != null">
+            #{engineId},
+        </if>
+        #{status},#{type},#{treeType},now(), now())
+    </insert>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        <foreach collection="list" index="index" item="item" separator=";">
+            insert into t_knowledge_tree (name,parent_id,user_id,
+            <if test="item.organId != null">
+                organ_id,
+            </if>
+            <if test="item.engineId != null">
+                engine_id,
+            </if>
+            status,type,tree_type,created,updated)
+            values(#{item.name},#{item.parentId},#{item.userId},
+            <if test="item.organId != null">
+                #{item.organId},
+            </if>
+            <if test="item.engineId != null">
+                #{item.engineId},
+            </if>
+            #{item.status},#{item.type},#{item.treeType},now(), now())
+        </foreach>
+    </insert>
+
+
+    <update id="updateByPrimaryKeySelective" parameterType="knowledgeTree">
+        update t_knowledge_tree set
+        <if test="name != null">
+            name = #{name},
+        </if>
+        <if test="status != null">
+            status = #{status},
+        </if>
+        <if test="type != null">
+            type = #{type},
+        </if>
+        <if test="parentId != null">
+            parent_id = #{parentId},
+        </if>
+        updated = now() where id = #{id}
+    </update>
+
+    <select id="selectByPrimaryKey" parameterType="long" resultMap="knowledgeTreeMap">
+        select
+        <include refid="Base_Column"/>
+        from t_knowledge_tree where id = #{id}
+    </select>
+
+    <select id="getTreeId" parameterType="com.risk.riskmanage.knowledge.model.KnowledgeTree" resultType="long">
+        select
+        id
+        from t_knowledge_tree
+        <where>
+            <if test="name != null">
+                and `name` = #{name}
+            </if>
+            <if test="parentId != null">
+                and parent_id = #{parentId}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="tree_type != null">
+                and tree_type = #{treeType}
+            </if>
+            <if test="user_id != null">
+                and user_id = #{userId}
+            </if>
+             <if test="organ_id != null">
+                and organ_id = #{organId}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectFolderList" parameterType="com.risk.riskmanage.engine.model.request.KnowledgeTreeListParam" resultMap="knowledgeTreeMap">
+        select id ,`name`
+        from t_knowledge_tree
+        where organ_id = #{organId}
+        <if test="status != null">
+            and status = #{status}
+        </if>
+        <if test="treeType!=null">
+            and tree_type = #{treeType}
+        </if>
+
+    </select>
+
+</mapper>

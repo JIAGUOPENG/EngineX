@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.rule.mapper.RuleInfoMapper">
+
+    <resultMap type="com.risk.riskmanage.rule.model.RuleInfo" id="RuleMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="code" column="code" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="priority" column="priority" jdbcType="INTEGER"/>
+        <result property="parentId" column="parent_id" jdbcType="INTEGER"/>
+        <result property="author" column="author" jdbcType="INTEGER"/>
+        <result property="userId" column="user_id" jdbcType="INTEGER"/>
+        <result property="organId" column="organ_id" jdbcType="INTEGER"/>
+        <result property="engineId" column="engine_id" jdbcType="INTEGER"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="isNon" column="is_non" jdbcType="INTEGER"/>
+        <result property="content" column="content" jdbcType="VARCHAR"/>
+        <result property="created" column="created" jdbcType="TIMESTAMP"/>
+        <result property="updated" column="updated" jdbcType="TIMESTAMP"/>
+        <result property="ruleType" column="rule_type" jdbcType="INTEGER"/>
+        <result property="ruleAudit" column="rule_audit" jdbcType="INTEGER"/>
+        <result property="score" column="score" jdbcType="INTEGER"/>
+        <result property="difficulty" column="difficulty" jdbcType="INTEGER"/>
+        <result property="scriptType" column="script_type" jdbcType="VARCHAR"/>
+        <result property="lastLogical" column="last_logical" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_column">
+        id, name, code, description, priority, parent_id, author, user_id, organ_id, engine_id, status, type, is_non, content, created, updated, rule_type, rule_audit, score, last_logical,difficulty,script_type,result_field_en,score_field_en
+    </sql>
+    <!--查询单个-->
+    <select id="queryById" resultMap="RuleMap">
+        select
+          <include refid="Base_column"></include>
+        from t_rule
+        where id = #{id}
+    </select>
+
+    <select id = "queryRuleList" parameterType="com.risk.riskmanage.rule.model.RuleInfo"  resultMap="RuleMap">
+       select
+          <include refid="Base_column"></include>
+       from t_rule
+        <where>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="name != null and name != ''">
+                and `name` like #{name}
+            </if>
+            <if test="code != null and code != ''">
+                and code = #{code}
+            </if>
+            <if test="description != null and description != ''">
+                and description = #{description}
+            </if>
+            <if test="priority != null">
+                and priority = #{priority}
+            </if>
+            <if test="parentId != null">
+                and parent_id = #{parentId}
+            </if>
+            <if test="parentIds != null and parentIds.size>0">
+                and parent_id in
+                <foreach collection = "parentIds" item="pId" open="("  separator="," close=")">
+                    #{pId}
+                </foreach>
+            </if>
+            <if test="author != null">
+                and author = #{author}
+            </if>
+            <if test="userId != null">
+                and user_id = #{userId}
+            </if>
+            <if test="organId != null">
+                and organ_id = #{organId}
+            </if>
+            <if test="engineId != null">
+                and engine_id = #{engineId}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="status==null">
+                and status >= 0
+            </if>
+            <if test="type != null">
+                and `type` = #{type}
+            </if>
+            <if test="isNon != null">
+                and is_non = #{isNon}
+            </if>
+            <if test="content != null and content != ''">
+                and content = #{content}
+            </if>
+            <if test="created != null">
+                and created >= #{created}
+            </if>
+            <if test="updated != null">
+                and updated >= #{updated}
+            </if>
+            <if test="ruleType != null">
+                and rule_type = #{ruleType}
+            </if>
+            <if test="ruleAudit != null">
+                and rule_audit = #{ruleAudit}
+            </if>
+            <if test="score != null">
+                and score = #{score}
+            </if>
+            <if test="lastLogical != null and lastLogical != ''">
+                and last_logical = #{lastLogical}
+            </if>
+            <if test="difficulty != null">
+                and difficulty = #{difficulty}
+            </if>
+            <if test="scriptType != null and scriptType!= ''">
+                and script_type = #{scriptType}
+            </if>
+        </where>
+        order by updated desc
+    </select>
+
+    <update id="updateStatus" >
+        update t_rule set status = #{status}
+        where id in
+        <foreach collection="ids" item="ruleId" open="(" separator="," close=")">
+            #{ruleId}
+        </foreach>
+    </update>
+    <update id="updateParent" >
+        update t_rule set parent_id = #{parentId}
+        where id in
+        <foreach collection="ids" item="ruleId" open="(" separator="," close=")">
+              #{ruleId}
+        </foreach>
+    </update>
+
+</mapper>
+

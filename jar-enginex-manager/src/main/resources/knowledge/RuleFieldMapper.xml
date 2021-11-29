@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.knowledge.mapper.RuleFieldMapper">
+    <cache></cache>
+    <resultMap type="ruleField" id="ruleFieldMap">
+	     <id column="id" property="id"/>    
+	     <result column="logical" property="logical"/> 
+	     <result column="operator" property="operator"/> 
+	     <result column="field" property="field"/> 
+	     <result column="field_value" property="fieldValue"/> 
+	     <result column="rule_id" property="ruleId"/>
+         <result column="field_id" property="fieldId"/> 
+         <result column="fieldEn" property="fieldEn"/> 
+         <result column="valueType" property="valueType"/>
+         <result column="valueScope" property="valueScope"/>
+    </resultMap>
+
+    <sql id ="Base_Column">
+        r.id ,
+        r.logical,
+        r.operator,
+        t.field_cn as field,
+        r.field_value as fieldValue,
+        r.rule_id as ruleId, 
+        r.field_id as fieldId,
+        t.field_en as fieldEn,
+        t.value_type as valueType,
+        t.value_scope as valueScope
+    </sql>
+    
+    <select id = "getFieldList" parameterType = "long" resultType = "ruleField">
+        select  <include refid="Base_Column"/> from t_rule_field r  left join t_field t on r.field_id = CONCAT(t.id,'|',t.field_en)  where r.rule_id = #{id} order by id 
+    </select>
+
+    <insert id = "insertField"   parameterType="java.util.List" > 
+	    insert into t_rule_field 
+	    (logical,operator,field_value,rule_id,field_id)
+	    values
+	    <foreach collection="list" index="index" item="item"  separator="," >
+		   (
+			 #{item.logical},
+			 #{item.operator},
+			 #{item.fieldValue},
+			 #{item.ruleId},
+			 TRIM(#{item.fieldId})
+		   )   
+		</foreach>
+    </insert>
+      
+    <select id = "selectByPrimaryKey"  parameterType = "long"  resultType="ruleField">
+      select <include refid="Base_Column"/> from t_rule_field where id = #{id}
+    </select>
+    
+    <update id = "updateField"   parameterType="java.util.List" > 
+	     <foreach collection="list" index="index" item="item"  separator=";" >
+		       update t_rule_field set
+		       <if test ="item.logical != null">
+		        logical = #{item.logical}  
+		       </if>
+		       <if test ="item.operator != null">
+		        ,operator = #{item.operator}   
+		       </if>
+		        <if test ="item.fieldValue != null">
+		        ,field_value = #{item.fieldValue}  
+		       </if>
+		       <if test ="item.fieldId != null">
+		        ,field_id = TRIM(#{item.fieldId}) 
+		       </if>
+		       where id = #{item.id}
+	      </foreach>
+    </update>
+    
+    <delete id="deleteField" parameterType="java.util.List">
+        <foreach collection="list" index="index" item="item"  separator=";" >
+           delete from t_rule_field where id = #{item.id}
+        </foreach>
+    </delete>
+    
+     <select id = "getNodeByList" parameterType = "nodeKnowledge" resultMap = "ruleFieldMap">
+      select t_rule_field.`field_id` fieldId from t_rule_field  WHERE t_rule_field.rule_id IN( SELECT knowledge_id FROM t_node_knowledge_rel WHERE t_node_knowledge_rel.`node_id`=#{nodeId} 
+         AND t_node_knowledge_rel.`knowledge_type`=#{knowledgeType}   )
+    </select>
+    <select id = "selectNodeByRuleList" parameterType = "nodeKnowledge" resultType="ruleField">
+      select t_rule_field.`field_id` fieldId from t_rule_field  WHERE t_rule_field.rule_id IN( SELECT knowledge_id FROM t_node_knowledge_rel WHERE t_node_knowledge_rel.`node_id`=#{nodeId} 
+         AND t_node_knowledge_rel.`knowledge_type`=#{knowledgeType}) 
+    </select>
+    
+    <!-- 普通规则查询字段 -->
+    
+    <select id = "selectByRuleList" parameterType="map" resultType="ruleField">
+      select t_rule_field.`field_id` fieldId from t_rule_field  WHERE t_rule_field.rule_id in
+		<foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                      #{item}
+                   </foreach>
+    </select>
+</mapper>

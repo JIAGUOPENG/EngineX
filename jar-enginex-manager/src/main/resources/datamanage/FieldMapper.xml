@@ -1,0 +1,836 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.datamanage.mapper.FieldMapper">
+     <cache></cache>
+     <resultMap type="com.risk.riskmanage.datamanage.model.Field" id="fieldMap">
+	     <id column="id" property="id"/>
+	     <result column="field_en" property="fieldEn"/>
+	     <result column="field_cn" property="fieldCn"/>
+	     <result column="field_typeid" property="fieldTypeId"/>
+	     <result column="value_type" property="valueType"/>
+	     <result column="value_scope" property="valueScope"/>
+	     <result column="is_derivative" property="isDerivative"/>
+	     <result column="is_output" property="isOutput"/>
+	     <result column="is_common" property="isCommon"/>
+	     <result column="formula" property="formula"/>
+	     <result column="formula_show" property="formulaShow"/>
+	     <result column="orig_fieldid" property="origFieldId"/>
+	     <result column="used_fieldid" property="usedFieldId"/>
+	     <result column="author" property="author"/>
+	     <result column="nickName" property="nickName"/>
+	     <result column="created" property="created"/>
+
+	     <result column="field_type" property="fieldType"/>
+	     <result column="engine_id" property="engineId"/>
+	     <result column="engineName" property="engineName"/>
+	     <result column="status" property="status"/>
+	     <result column="fieldRelId" property="fieldRelId"/>
+	     <result column="is_use_sql" property="isUseSql"/>
+	     <result column="data_source_id" property="dataSourceId"/>
+	     <result column="sql_statement" property="sqlStatement"/>
+	     <result column="is_interface" property="isInterface"/>
+	     <result column="interface_id" property="interfaceId"/>
+         <result column="json_value" property="jsonValue"/>
+         <result column="dict_variable" property="dictVariable"/>
+         <result column="interface_parse_field" property="interfaceParseField"/>
+
+
+	     <collection property="fieldCondList" ofType="fieldCond" column="id" select ="com.risk.riskmanage.datamanage.mapper.FieldCondMapper.getFieldCondList"></collection>
+
+     </resultMap>
+
+
+    <!--
+        <select id="findByFieldType" parameterType="java.util.Map" resultType="com.risk.riskmanage.datamanage.model.Field">
+            select f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+            , p.field_type as fieldType
+            , f.value_type as valueType, f.value_scope as valueScope
+            , f.is_derivative as isDerivative
+            , f.is_output as isOutput
+            , f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+            , f.author, u.nick_name as nickName ,f.created
+            , r.status
+            from t_field f, t_field_user_rel r, t_field_type p, t_user u
+            where f.id = r.field_id and f.field_typeid = p.id and r.user_id = u.user_id
+            and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+            <if test="searchKey != null">
+                and (f.field_en like '%${searchKey}%' or f.field_cn like '%${searchKey}%' )
+            </if>
+            <if test="fieldTypeId == null and engineId == null and isCommon == 1 and status == null">
+                and r.engine_id is null
+                and f.is_common = 1
+                and r.status != -1
+            </if>
+            <if test="fieldTypeId != null and engineId == null and isCommon == 1 and status == null">
+                and f.field_typeid = #{fieldTypeId}
+                and r.engine_id is null
+                and f.is_common = 1
+                and r.status != -1
+            </if>
+            <if test="fieldTypeId == null and engineId != null and isCommon == 0 and status == null">
+                and r.engine_id = #{engineId}
+                and r.status != -1
+            </if>
+            <if test="fieldTypeId == null and engineId != null and isCommon == 1 and status == 1">
+                and r.engine_id is null
+                and f.is_common = 1
+                and r.status = 1
+            </if>
+            <if test="fieldTypeId != null and engineId != null and isCommon == 1 and status == 1">
+                and f.field_typeid = #{fieldTypeId}
+                and r.engine_id is null
+                and f.is_common = 1
+                and r.status = 1
+            </if>
+            <if test="fieldTypeId != null and engineId != null and isCommon == 0 and status == null">
+                and f.field_typeid = #{fieldTypeId}
+                and r.engine_id = #{engineId}
+                and r.status != -1
+            </if>
+            <if test="fieldTypeId == null and engineId != null and isCommon == 0 and status == -1">
+                and r.engine_id = #{engineId}
+                and r.status = -1
+            </if>
+            order by f.created desc
+        </select>
+    -->
+    <sql id="Base_Column">
+        id, field_en, field_cn, field_typeid, value_type, value_scope, is_derivative, is_output, is_common, formula, formula_show, used_fieldid, orig_fieldid, author, created, is_use_sql, data_source_id, sql_statement, sql_variable, is_interface, interface_id, interface_parse_field, json_value,dict_variable
+    </sql>
+
+    <select id="findByFieldType" parameterType="java.util.Map" resultType="com.risk.riskmanage.datamanage.model.Field">
+        select f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+        , p.field_type as fieldType
+        , f.value_type as valueType, f.value_scope as valueScope
+        , f.is_derivative as isDerivative
+        , f.is_output as isOutput
+        , f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+        , f.author, u.nick_name as nickName ,f.created
+        , r.status
+        , f.is_use_sql, f.data_source_id, f.sql_statement
+        ,f.is_interface,f.interface_id
+        ,f.interface_parse_field
+        ,f.json_value
+        ,f.dict_variable
+        from t_field f, t_field_user_rel r, t_field_type p, t_user u
+        where f.id = r.field_id
+            and f.field_typeid = p.id
+            and r.user_id = u.user_id
+            and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+
+            <if test="searchKey != null">
+                and (f.field_en like '%${searchKey}%' or f.field_cn like '%${searchKey}%' )
+            </if>
+        <if test="fieldTypeId == null and engineId == null and isCommon == 1 and status == null">
+            and r.engine_id is null
+            and f.is_common = 1
+            and r.status != -1
+        </if>
+        <if test="fieldTypeId != null and engineId == null and isCommon == 1 and status == null">
+            and f.field_typeid = #{fieldTypeId}
+            and r.engine_id is null
+            and f.is_common = 1
+            and r.status != -1
+        </if>
+        <if test="fieldTypeId == null and engineId != null and isCommon == 0 and status == null">
+            and r.engine_id = #{engineId}
+            and r.status != -1
+        </if>
+        <if test="fieldTypeId == null and engineId != null and isCommon == 1 and status == 1">
+            and r.engine_id is null
+            and f.is_common = 1
+            and r.status = 1
+        </if>
+        <if test="fieldTypeId != null and engineId != null and isCommon == 1 and status == 1">
+            and f.field_typeid = #{fieldTypeId}
+            and r.engine_id is null
+            and f.is_common = 1
+            and r.status = 1
+        </if>
+        <if test="fieldTypeId != null and engineId != null and isCommon == 0 and status == null">
+            and f.field_typeid = #{fieldTypeId}
+            and r.engine_id = #{engineId}
+            and r.status != -1
+        </if>
+        <if test="fieldTypeId == null and engineId != null and isCommon == 0 and status == -1">
+            and r.engine_id = #{engineId}
+            and r.status = -1
+        </if>
+
+            <if test="fType == 1">
+                AND f.is_use_sql = FALSE
+                AND f.is_derivative = FALSE
+                AND f.is_interface = FALSE
+            </if>
+            <if test="fType == 2">
+                AND f.is_use_sql = TRUE
+            </if>
+            <if test="fType == 3">
+                AND f.is_derivative = TRUE
+            </if>
+            <if test="fType == 4">
+                AND f.is_interface = TRUE
+            </if>
+
+
+            AND f.is_common = 1
+            <if test="fieldTypeId != null">
+                AND f.field_typeid = #{fieldTypeId}
+            </if>
+
+            ORDER BY f.created DESC
+    </select>
+
+    <select id="searchByName" parameterType="map"  resultType="field">
+		 select   f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , p.field_type as fieldType
+		        , f.value_type as valueType, f.value_scope as valueScope
+		        , f.is_derivative as isDerivative
+		        , f.is_output as isOutput
+		        , f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+		        , f.author, u.nick_name as nickName ,f.created
+		        , r.status
+                ,f.is_interface,f.interface_id
+                ,f.interface_parse_field
+                ,f.json_value
+                ,f.dict_variable
+           from t_field f, t_field_user_rel r, t_field_type p, t_user u 
+          where f.id = r.field_id and f.field_typeid = p.id and r.user_id = u.user_id
+            <if test="searchKey != null">
+                and f.field_cn like '%${searchKey}%'
+            </if>
+                and r.status = 1
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+            <if test="engineId != null">
+                and r.engine_id = #{engineId}
+            </if>
+            <if test="engineId == null">
+                and r.engine_id is null
+            </if>
+	</select>
+	
+	<select id="findFieldTypeId" parameterType="map"  resultType="long">
+		 select distinct f.field_typeid as fieldTypeId
+           from t_field f,t_field_user_rel r
+          where f.id = r.field_id 
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              <if test="engineId != null">
+                and r.engine_id = #{engineId}
+              </if>
+              <if test="engineId == null">
+                and r.engine_id is null
+              </if>
+              and r.field_id in
+              <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                #{item}
+              </foreach>
+	</select>
+	
+	<select id="findFieldTypeIdById" parameterType="map"  resultType="long">
+		 select distinct f.field_typeid as fieldTypeId
+           from t_field f,t_field_user_rel r
+          where f.id = r.field_id
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              <if test="engineId != null">
+                and r.engine_id = #{engineId}
+              </if>
+              <if test="engineId == null">
+                and r.engine_id is null
+              </if>
+              and r.field_id in
+              <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                #{item}
+              </foreach>
+	</select>
+	
+	<select id="findFieldTypeIdsByFieldId" parameterType="map"  resultType="String">
+		 	select group_concat(distinct(f.field_typeid)) as parentId
+              from t_field f,t_field_user_rel r
+             where f.id = r.field_id
+                   and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                   and r.engine_id = #{engineId}
+                   and f.id in
+                       <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                       #{item}
+                       </foreach>
+	</select>
+	
+	<select id="findByUser" parameterType="map"  resultType="com.risk.riskmanage.datamanage.model.Field">
+		 select   f.id
+		        , r.id as fieldRelId
+		        , f.field_en as fieldEn
+		        , f.field_cn as fieldCn
+		        , f.field_typeid as fieldTypeId
+		        , f.value_type as valueType
+		        , f.value_scope as valueScope
+		        , p.field_type as fieldType
+                , f.is_derivative
+                , f.is_output
+                , f.is_common
+                , f.formula
+                , f.formula_show
+                , f.used_fieldid
+                , f.orig_fieldid
+                , f.author
+                , f.is_use_sql
+                , f.data_source_id
+                , f.sql_statement
+                , f.sql_variable
+                , f.is_interface
+                , f.interface_id
+                , f.interface_parse_field
+                , f.json_value
+          ,f.dict_variable
+           from t_field f,t_field_user_rel r,t_field_type p
+          where f.id = r.field_id
+                and f.field_typeid = p.id
+                and r.status = 1
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+            <if test="searchKey != null">
+                and f.field_cn like '%${searchKey}%'
+            </if>
+            <if test="engineId != null">
+                and r.engine_id = #{engineId}
+            </if>
+            <if test="engineId == null">
+                and r.engine_id is null
+            </if>
+            <if test="fieldId != null">
+                and f.id != #{fieldId}
+            </if>
+
+         ORDER BY f.created DESC
+	</select>
+	
+	<select id="countByParams" parameterType="map" resultType="java.lang.Integer">
+	     select count(f.id)
+           from t_field f,t_field_user_rel r
+          where f.id = r.field_id
+            <if test="searchKey != null">
+                and f.field_en like '%${searchKey}%'
+            </if>
+                and f.field_typeid =  #{fieldTypeId}
+                and r.status = 1
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+            <if test="engineId != null">
+                and r.engine_id = #{engineId}
+            </if>
+            <if test="engineId == null">
+                and r.engine_id is null
+            </if>
+	</select>
+	
+	<select id="findByFieldId" parameterType="map"  resultMap="fieldMap">
+		 select   f.id, f.field_en, f.field_cn, f.field_typeid
+		        , f.value_type, f.value_scope, f.is_derivative
+		        , f.is_output, f.is_common, f.formula, f.formula_show
+		        , f.orig_fieldid, used_fieldid
+		        , r.engine_id
+		        , p.field_type
+                , f.is_use_sql
+                , f.data_source_id
+                , f.sql_statement
+                , f.sql_variable
+                ,f.is_interface
+                ,f.interface_id
+                ,f.json_value
+                ,f.interface_parse_field
+        ,f.dict_variable
+           from t_field f,t_field_user_rel r,t_field_type p
+          where f.id = r.field_id
+                and f.field_typeid = p.id
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                <if test="engineId != null">
+                    and r.engine_id = #{engineId}
+                </if>
+                <if test="engineId == null">
+                    and r.engine_id is null
+                </if>
+                and f.id = #{id}
+                
+	</select>
+	<select id="findByFieldIdbyorganId" parameterType="map"  resultMap="fieldMap">
+		 select   f.id, f.field_en as field_en, f.field_cn as field_cn, f.field_typeid as field_typeid
+		        , f.value_type as value_type, f.value_scope as value_scope, f.is_derivative as is_derivative
+		        , f.is_output as is_output, f.is_common as is_common, f.formula, f.formula_show as formula_show
+		        , f.orig_fieldid as orig_fieldid, used_fieldid as used_fieldid
+		        , r.engine_id as engine_id
+		        , p.field_type as field_type
+                ,f.is_interface,f.interface_id
+                ,f.interface_parse_field
+                ,f.json_value
+               ,f.dict_variable
+           from t_field f,t_field_user_rel r,t_field_type p
+          where f.id = r.field_id
+                and f.field_typeid = p.id
+                and r.organ_id = #{organId} 
+                <if test="engineId != null">
+                    and r.engine_id = #{engineId}
+                </if>
+                <if test="engineId == null">
+                    and r.engine_id is null
+                </if>
+                and f.id = #{id}
+                
+	</select>
+	<select id="findFieldByIds" parameterType="map"  resultMap="fieldMap">
+		 select   f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+		        , r.engine_id as engineId
+		        , f.orig_fieldid as origFieldId
+		        , p.field_type as fieldType
+                ,f.is_interface,f.interface_id
+                ,f.interface_parse_field
+                ,f.json_value
+               ,f.dict_variable
+           from t_field f,t_field_user_rel r,t_field_type p
+          where f.id = r.field_id
+                and f.field_typeid = p.id
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                <if test="engineId != null">
+                    and r.engine_id = #{engineId}
+                </if>
+                <if test="isDerivative != null">
+                    and f.is_derivative = #{isDerivative}
+                </if>
+                <if test="engineId == null">
+                    and r.engine_id is null
+                </if>
+                and f.id in       
+                   <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                      #{item}
+                   </foreach>
+	</select>
+		<select id="findFieldByIdsbyorganId" parameterType="map"  resultMap="fieldMap">
+		 select   f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+		        , r.engine_id as engineId
+		        , f.orig_fieldid as origFieldId
+		        , p.field_type as fieldType
+                ,f.is_interface,f.interface_id
+                ,f.interface_parse_field
+                ,f.json_value
+            ,f.dict_variable
+           from t_field f,t_field_user_rel r,t_field_type p
+          where f.id = r.field_id
+                and f.field_typeid = p.id
+                and r.organ_id =  #{organId}
+                <if test="engineId != null">
+                    and r.engine_id = #{engineId}
+                </if>
+                <if test="isDerivative != null">
+                    and f.is_derivative = #{isDerivative}
+                </if>
+                <if test="engineId == null">
+                    and r.engine_id is null
+                </if>
+                and f.id in       
+                   <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                      #{item}
+                   </foreach>
+	</select>
+	<select id="findFieldIdsByTypeIds" parameterType="map"  resultType="String">
+         select group_concat(f.id) as id
+           from t_field f,t_field_user_rel r 
+          where f.id = r.field_id 
+          		and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                and r.status in (0,1) 
+                and r.engine_id = #{engineId}
+                and f.field_typeid in       
+                   <foreach collection="fieldTypeIds" item="item" index="index" open="(" separator="," close=")">  
+                      #{item}
+                   </foreach>
+	</select>
+	
+	<select id="findFieldByIdsForCheckField" parameterType="map"  resultMap="fieldMap">
+		 select   f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+		        , r.engine_id as engineId, e.name as engineName
+		        , p.field_type as fieldType
+                ,f.is_interface,f.interface_id
+                ,f.interface_parse_field
+                ,f.json_value
+        ,f.dict_variable
+           from t_field f,t_field_type p
+                ,t_field_user_rel r left join t_engine e on (r.engine_id = e.id)
+          where f.id = r.field_id
+                and f.field_typeid = p.id
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                <if test="engineId != null">
+                    and r.engine_id = #{engineId}
+                </if>
+                <if test="engineId == null">
+                   and ( (f.is_common = 0 and r.engine_id is not null) or (f.is_common = 1 and r.engine_id is null) )
+                </if>
+                and f.id in
+                   <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                      #{item}
+                   </foreach>
+	</select>
+	
+	<select id="isExists" parameterType="map"  resultType="java.lang.Integer">
+         select count(f.id)
+         from t_field f,t_field_user_rel r
+         where f.id = r.field_id
+         	   and r.status != -1
+               <if test="fieldEn != null">
+               and f.field_en = #{fieldEn}
+               </if>
+               <if test="fieldCn != null">
+               and f.field_cn = #{fieldCn}
+               </if>
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+               <if test="engineId != null">
+               and r.engine_id = #{engineId}
+               </if>
+               <if test="engineId == null">
+               and r.engine_id is null
+               </if>
+               <if test="Id != null">
+               and f.id != #{Id}
+               </if>
+	</select>
+	
+	<select id="findByFieldName" parameterType="map"  resultType="Field">
+         select f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+                ,f.is_interface,f.interface_id
+                ,f.interface_parse_field
+                ,f.json_value
+        ,f.dict_variable
+         from t_field f,t_field_user_rel r
+         where f.id = r.field_id
+               and (f.field_en = #{fieldEn} or f.field_cn = #{fieldCn})
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+           <if test="engineId != null">
+               and r.engine_id = #{engineId}
+           </if>
+           <if test="engineId == null">
+               and r.engine_id is null
+           </if>
+           
+	</select>
+	
+	<insert id="createField" useGeneratedKeys="true" keyProperty="id" parameterType="com.risk.riskmanage.datamanage.model.Field">
+	   insert into t_field (  field_en, field_cn, field_typeid
+	                        , value_type, value_scope, is_derivative
+	                        , is_output, formula, formula_show, orig_fieldid, used_fieldid
+	                        , is_common, author, created, is_use_sql, data_source_id, sql_statement, sql_variable
+	                        , is_interface, interface_id, interface_parse_field, json_value, organ_id,dict_variable)
+                    values (  #{fieldEn}, #{fieldCn}, #{fieldTypeId}
+                            , #{valueType}, #{valueScope}, #{isDerivative}
+                            , #{isOutput}, #{formula}, #{formulaShow}, #{origFieldId}, #{usedFieldId}
+                            , #{isCommon}, #{author}, now(), #{isUseSql}, #{dataSourceId}, #{sqlStatement}, #{sqlVariable}
+                            , #{isInterface}, #{interfaceId}, #{interfaceParseField}, #{jsonValue}, #{organId},#{dictVariable})
+	</insert>
+	
+	<insert id="batchCreateField" parameterType="java.util.List">
+		insert into t_field	( field_en, field_cn, field_typeid
+	                        , value_type, value_scope, is_derivative
+	                        , is_output, formula, formula_show, is_common, author, created,
+	                        , is_interface, interface_id, interface_parse_field, json_value,dict_variable)
+		            values
+			<foreach collection="list" item="field" index="index" separator=",">
+			              ( 
+			                  #{field.fieldEn}, #{field.fieldCn}, #{field.fieldTypeId}
+			                , #{field.valueType}, #{field.valueScope}, #{field.isDerivative}
+			                , #{field.isOutput}, #{field.formula}, #{field.formulaShow}, #{field.isCommon}, #{field.author}, now()
+			                , #{isInterface}, #{interfaceId}, #{interfaceParseField}, #{jsonValue},#{dictVariable}
+			              )
+			</foreach>
+	</insert>
+	
+	<update id="updateField" parameterType="java.util.Map">
+       update t_field
+          set   field_en = #{fieldEn}, field_cn = #{fieldCn}, field_typeid = #{fieldTypeId}
+              , value_type = #{valueType}, value_scope = #{valueScope}, is_derivative = #{isDerivative}
+              , is_output = #{isOutput}, formula = #{formula}, formula_show = #{formulaShow}
+              , orig_fieldid = #{origFieldId}, used_fieldid = #{usedFieldId}, is_common = #{isCommon}
+              , is_use_sql = #{isUseSql}, data_source_id = #{dataSourceId}, sql_statement = #{sqlStatement}, sql_variable = #{sqlVariable}
+              ,is_interface = #{isInterface}, interface_id = #{interfaceId}, interface_parse_field = #{interfaceParseField}, json_value = #{jsonValue},dict_variable = #{dictVariable}
+        where id = #{id}
+<!--        where id = (select field_id-->
+<!--                      from t_field_user_rel-->
+<!--                     where organ_id = ( select organ_id from t_user where user_id = #{userId} )-->
+<!--                           <if test="engineId != null">-->
+<!--                           and engine_id = #{engineId}-->
+<!--                           </if>-->
+<!--                           <if test="engineId == null">-->
+<!--                           and engine_id is null-->
+<!--            			   </if>-->
+<!--                           and field_id = #{id}-->
+<!--                    )-->
+    </update>
+    
+    <select id = "getFieldList" parameterType="map"  resultType="com.risk.riskmanage.datamanage.model.Field">
+          select 
+	         t.id, 
+	         t.field_en as fieldEn,
+	         t.field_cn as fieldCn,
+	         t.field_typeid as fieldTypeId,
+	         t.value_type as valueType,
+	         t.value_scope as valueScope,
+	         t.is_output as isOutput, 
+	         r.id as fieldRelId,
+	         p.field_type as fieldType
+            ,t.is_interface,t.interface_id
+            ,t.interface_parse_field
+            ,t.json_value
+            ,t.dict_variable
+          from t_field t LEFT JOIN t_field_user_rel r on t.id = r.field_id LEFT JOIN t_field_type p on t.field_typeid = p.id where r.organ_id = #{organId} and status = 1
+         <if test="ids != null and ids !=''">
+             and t.id in (ids)
+         </if>
+         <if test="searchKey != null">
+                and t.field_cn like CONCAT('%',#{searchKey},'%' )
+         </if>
+         <if test="isOutput != null">
+                and t.is_output = #{isOutput}
+         </if>
+         <if test="engineId != null and  engineId!=''">
+             and r.engine_id = #{engineId}
+         </if>
+          <if test="valueType != null">
+             and t.value_type = #{valueType}
+         </if>
+         <if test="engineId == null">
+             and r.engine_id is null
+         </if>
+    </select>
+    
+    <select id="findByFieldEnbyorganId" parameterType="map"  resultMap="fieldMap">
+         select f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow,f.dict_variable as dictVariable
+         from t_field f,t_field_user_rel r
+         where f.id = r.field_id
+               and f.field_en = #{fieldEn}
+               and r.organ_id = #{organId} 
+               and r.engine_id = #{engineId}
+               and r.status = 1     
+	</select>
+	
+	 <select id="findByFieldEn" parameterType="map"  resultMap="fieldMap">
+         select f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow,f.dict_variable as dictVariable
+         from t_field f,t_field_user_rel r
+         where f.id = r.field_id
+               and f.field_en = #{fieldEn}
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+               and r.engine_id = #{engineId}
+               and r.status = 1     
+	</select>
+	
+	<select id="findByFieldCn" parameterType="map"  resultMap="fieldMap">
+         select f.id, f.field_en, f.field_cn, f.field_typeid
+		        , f.value_type, f.value_scope, f.is_derivative
+		        , f.is_output, f.is_common, f.formula, f.formula_show
+		        , f.orig_fieldid,f.dict_variable
+         from t_field f,t_field_user_rel r
+         where f.id = r.field_id
+               and f.field_cn = #{fieldCn}
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+               <if test="engineId != null">
+               and r.engine_id = #{engineId}
+               </if>
+               <if test="engineId == null">
+               and r.engine_id is null
+               </if>
+               and r.status = 1
+	</select>
+	<select id="findByFieldCnbyorganId" parameterType="map"  resultMap="fieldMap">
+         select f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+		        , f.orig_fieldid as origFieldId,f.dict_variable as dictVariable
+         from t_field f,t_field_user_rel r
+         where f.id = r.field_id
+               and f.field_cn = #{fieldCn}
+               and r.organ_id = #{organId}
+               <if test="engineId != null">
+               and r.engine_id = #{engineId}
+               </if>
+               <if test="engineId == null">
+               and r.engine_id is null
+               </if>
+               and r.status = 1
+	</select>
+	
+	
+	<select id="checkField" parameterType="map"  resultType="String">
+		select group_concat(f.id) as ids
+		  from t_field f,t_field_user_rel r 
+	     where f.id = r.field_id 
+	           <if test="engineId != null">
+               and r.engine_id = #{engineId}
+               </if>
+	           and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+	           and r.status = 1 and instr(f.used_fieldid,#{fieldId}) > 0
+	</select>
+	
+	<select id="findByFieldCnNoEngineId" parameterType="map"  resultMap="fieldMap">
+         select f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+		        , f.orig_fieldid as origFieldId,f.dict_variable as dictVariable
+         from t_field f,t_field_user_rel r
+         where f.id = r.field_id
+               and f.field_cn = #{fieldCn}
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+               and r.engine_id is null
+               and r.status = 1
+	</select>
+	<select id="findByFieldCnNoEngineIdbyorganId" parameterType="map"  resultMap="fieldMap">
+         select f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+		        , f.orig_fieldid as origFieldId,f.dict_variable as dictVariable
+         from t_field f,t_field_user_rel r
+         where f.id = r.field_id
+               and f.field_cn = #{fieldCn}
+               and r.organ_id = #{organId} 
+               and r.engine_id is null
+               and r.status = 1
+	</select>
+	<select id="findByFieldIdNoEngineId" parameterType="map"  resultMap="fieldMap">
+		 select   f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow
+		        , f.orig_fieldid as origFieldId
+		        , r.engine_id as engineId
+		        , p.field_type as fieldType
+		        ,f.dict_variable as dictVariable
+           from t_field f,t_field_user_rel r,t_field_type p
+          where f.id = r.field_id
+                and f.field_typeid = p.id
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                and r.engine_id is null
+                and f.id = #{id}
+	</select>
+	
+	<select id="findFieldByIdsAndIsderivative" parameterType="map"  resultMap="fieldMap">
+		 select   f.id, f.field_en as fieldEn, f.field_cn as fieldCn, f.field_typeid as fieldTypeId
+		        , f.value_type as valueType, f.value_scope as valueScope, f.is_derivative as isDerivative
+		        , f.is_output as isOutput, f.is_common as isCommon, f.formula, f.formula_show as formulaShow,f.dict_variable as dictVariable
+           from t_field f
+          where 
+          		is_derivative=#{isDerivative} 
+                and f.id in       
+                   <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                      #{item}
+                   </foreach>
+	</select>
+	
+	<select id="findExcelByFieldType" parameterType="map"  resultType="com.risk.riskmanage.datamanage.model.Field">
+		 select   f.id, f.field_en as fieldEn, f.field_cn as fieldCn, t.field_type as fieldType
+                , f.value_type as valueType,f.dict_variable as dictVariable
+                , CASE WHEN f.value_type=1 THEN '数值型' WHEN f.value_type=2 THEN '字符型' WHEN f.value_type=3 THEN '枚举型' WHEN f.value_type=4 THEN '小数型' END valueTypeName
+		        , f.value_scope as valueScope
+                , f.is_derivative as isDerivative
+                , CASE WHEN f.is_derivative=0 THEN 'N' WHEN f.is_derivative=1 THEN 'Y' END isDerivativeName
+                , f.is_output as isOutput
+                , CASE WHEN f.is_output=0 THEN 'N' WHEN f.is_output=1 THEN 'Y' END isOutputName
+		        , f.formula, u.nick_name as nickName, f.created
+           from t_field f,t_field_user_rel r,t_field_type t,t_user u
+          where f.id = r.field_id
+                and f.field_typeid = t.id 
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                and f.author = u.user_id
+            <if test="searchKey != null">
+                and f.field_en like '%${searchKey}%'
+            </if>
+            <if test="fieldTypeId != null">
+                and f.field_typeid =  #{fieldTypeId}
+            </if>
+            <if test="engineId != null">
+                and r.engine_id = #{engineId}
+            </if>
+            <if test="engineId == null">
+                and r.engine_id is null
+            </if>
+            
+	</select>
+	
+	<select id="getSourceField" parameterType="map"  resultType="String">
+		select used_fieldid as usedFieldId,orig_fieldid as origFieldId 
+		  from t_field f,t_field_user_rel r
+	     where f.id = r.field_id
+	           and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+               and f.id = #{fieldId}
+               and r.engine_id is null
+	</select>
+	
+	<select id="findOrgFieldTypeIdsByIds" parameterType="map"  resultType="String">
+		 select group_concat(distinct(f.field_typeid))
+           from t_field f,t_field_user_rel r
+          where f.id = r.field_id
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                and f.id in
+                   <foreach collection="fieldIds" item="item" index="index" open="(" separator="," close=")">  
+                      #{item}
+                   </foreach>
+                and r.engine_id is null
+	</select>
+	
+	<select id="findOrgFieldIdsByTypeIds" parameterType="map"  resultType="String">
+         select group_concat(f.id) as id
+           from t_field f,t_field_user_rel r 
+          where f.id = r.field_id 
+          		and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                and r.status = 1
+                and f.field_typeid in       
+                   <foreach collection="fieldTypeIds" item="item" index="index" open="(" separator="," close=")">  
+                      #{item}
+                   </foreach>
+                and r.engine_id is null
+	</select>
+
+    <select id="findFieldNameById" parameterType="long" resultType="string">
+        select t_field.field_en
+        from t_field
+        where id = #{fieldId}
+    </select>
+	<update id="updateFieldFolder">
+        update t_field
+        set field_typeid = #{folderId}
+        where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </update>
+    <select id="selectByIds" resultType="com.risk.riskmanage.datamanage.model.Field">
+        select
+        <include refid="Base_Column" ></include>
+        from t_field
+        where id in
+        <foreach collection="ids" open="(" close=")" separator="," item="id">
+            #{id}
+        </foreach>
+
+    </select>
+    <select id="selectByEns" resultType="com.risk.riskmanage.datamanage.model.Field">
+        select
+        <include refid="Base_Column"></include>
+        from t_field
+        where field_en in
+        <foreach collection="ens" open="(" close=")" separator="," item="en">
+            #{en}
+        </foreach>
+    </select>
+    <select id="selectByOrganCns" resultType="com.risk.riskmanage.datamanage.model.Field">
+        select
+        <include refid="Base_Column"></include>
+        from t_field
+        where organ_id =  #{organId}
+        and field_cn in
+        <foreach collection="cns" open="(" close=")" separator="," item="cn">
+            #{cn}
+        </foreach>
+    </select>
+</mapper>

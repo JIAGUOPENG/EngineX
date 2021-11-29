@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper  namespace="com.risk.riskmanage.knowledge.mapper.RuleContentMapper">
+    <cache></cache>
+    <resultMap type="com.risk.riskmanage.knowledge.model.RuleContent" id="ruleContentMap">
+	     <id column="id" property="id"/>    
+	     <result column="field" property="field"/> 
+	     <result column="field_id" property="fieldId"/> 
+	     <result column="field_value" property="fieldValue"/> 
+	     <result column="rule_id" property="ruleId"/>
+	     <result column="fieldEn" property="fieldEn"/> 
+	     <result column="valueType" property="valueType"/>
+         <result column="valueScope" property="valueScope"/>
+         <result column="variable_type" property="variableType"/>
+    </resultMap>
+
+    <sql id ="Base_Column">
+        r.id,
+        t.field_cn as field,
+        r.field_id as fieldId,
+        r.field_value as fieldValue,
+        r.rule_id as ruleId,
+        t.field_en as fieldEn,
+        t.value_type as valueType,
+        t.value_scope as valueScope,
+        r.variable_type as variableType
+    </sql>
+    
+    <select id = "getRuleContentList" parameterType = "long" resultType = "ruleContent">
+        select  <include refid="Base_Column"/> from t_rule_content r  left join t_field t on r.field_id = t.id where rule_id = #{id} order by id
+    </select>
+    
+    <insert id = "insertRuleContent"   parameterType="java.util.List"> 
+        insert into t_rule_content (field_id,field_value,rule_id,variable_type)
+	    values
+	    <foreach collection="list" index="index" item="item" separator=",">
+	     (#{item.fieldId},#{item.fieldValue},#{item.ruleId},#{item.variableType})
+	    </foreach>
+    </insert>
+    
+    <select id = "selectByPrimaryKey"  parameterType = "long"  resultType="ruleContent">
+      select <include refid="Base_Column"/> from t_rule_content where id = #{id}
+    </select>
+    
+    <update id = "updateRuleContent"   parameterType="java.util.List" > 
+	      <foreach collection="list" index="index" item="item"  separator=";" >
+		       update t_rule_content set
+		        <if test ="item.fieldId!= null">
+		         field_id = #{item.fieldId}   
+		       </if>
+		       <if test ="item.fieldValue != null">
+		        ,field_value = #{item.fieldValue}   
+		       </if>
+               <if test ="item.variableType != null">
+		        ,variable_type = #{item.variableType}
+		       </if>
+		        where id = #{item.id}
+	      </foreach>
+    </update>
+    
+    <delete id="deleteRuleContent" parameterType="java.util.List">
+	     <foreach collection="list" index="index" item="item"  separator=";" >
+	       delete from t_rule_content where id = #{item.id}
+	     </foreach>
+    </delete>
+    
+    <select id = "selectNodeByRuleList" parameterType = "nodeKnowledge" resultType="ruleContent">
+      select <include refid="Base_Column"/> from t_rule_content  WHERE t_rule_content.rule_id IN( SELECT knowledge_id FROM t_node_knowledge_rel WHERE t_node_knowledge_rel.`node_id`=#{id} 
+         AND t_node_knowledge_rel.`knowledge_type`=#{knowledge_type} 
+    </select>
+</mapper>

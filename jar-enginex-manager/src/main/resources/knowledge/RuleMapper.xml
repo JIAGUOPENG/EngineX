@@ -1,0 +1,509 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper  namespace="com.risk.riskmanage.knowledge.mapper.RuleMapper">
+    <cache></cache>
+    <resultMap type="com.risk.riskmanage.knowledge.model.Rule" id="ruleMap">
+	     <id column="id" property="id"/>    
+	     <result column="name" property="name"/> 
+	     <result column="code" property="code"/>
+	     <result column="description" property="description"/>  
+	     <result column="priority" property="priority"/>  
+	     <result column="parent_id" property="parentId"/>    
+	     <result column="user_id" property="userId"/>
+	     <result column="author" property="author"/>
+	     <result column="nick_name" property="authorName"/>
+	     <result column="organ_id" property="organId"/>
+	     <result column="engine_id" property="engineId"/>
+	     <result column="status" property="status"/>
+	     <result column="type" property="type"/>
+	     <result column="is_non" property="isNon"/>
+	     <result column="created" property="created"/>
+	     <result column="updated" property="updated"/>
+	     <result column="rule_type" property="ruleType"/>
+	     <result column="rule_audit" property="ruleAudit"/>
+	     <result column="score" property="score"/>
+	     <result column="last_logical" property="lastLogical"/>
+	     <result column="engineName" property="engineName"/>
+	     <collection property="ruleFieldList" ofType="ruleField"  column="id"  select ="com.risk.riskmanage.knowledge.mapper.RuleFieldMapper.getFieldList"></collection>
+	     <collection property="ruleContentList"  ofType="ruleContent" column="id"   select = "com.risk.riskmanage.knowledge.mapper.RuleContentMapper.getRuleContentList"></collection>
+    </resultMap>
+
+<!--
+    <sql id ="Base_Column">
+        r.id,
+        r.name,
+        r.versionCode,
+        r.description,
+        r.priority,
+	    r.parent_id as parentId,
+	    r.user_id as userId,
+	    r.author,
+	    u.nick_name as authorName,
+	    r.organ_id as organId,
+	    r.engine_id as engineId,
+	    r.status,
+	    r.rule_audit as ruleAudit,
+	    r.type,
+	    r.score,
+	    r.last_logical as lastLogical,
+	    r.is_non as isNon,
+	    r.created,
+	    r.updated,
+	    r.rule_type
+    </sql>
+-->
+    <sql id="Base_Column">
+        r.id,
+        r.name,
+        r.code,
+        r.description,
+        r.priority,
+	    r.parent_id,
+	    r.user_id,
+	    r.author,
+	    u.nick_name as nick_name,
+	    r.organ_id,
+	    r.engine_id,
+	    r.status,
+	    r.rule_audit,
+	    r.type,
+	    r.score,
+	    r.last_logical,
+	    r.is_non,
+	    r.created,
+	    r.updated,
+	    r.rule_type,
+	    r.difficulty
+    </sql>
+
+    <sql id ="Base_Column_1">
+        r.id,
+        r.name,   
+        r.code,
+        r.description,
+        r.priority,
+	    r.parent_id,
+	    r.user_id,
+	    r.author,
+	    u.nick_name,
+	    r.organ_id,
+	    r.engine_id,
+		(CASE r.STATUS
+		 WHEN r.id IN (
+			SELECT
+				rule_id
+			FROM
+				t_engine_rule_rel td
+			WHERE
+				engine_id =#{engineId}
+		) THEN
+			1
+		ELSE
+			0
+		END) AS status,
+	    r.rule_audit,
+	    r.type,
+	    r.score,
+	    r.last_logical,
+	    r.is_non,
+	    r.created,
+	    r.updated,
+	    r.rule_type     
+    </sql>
+    
+    <sql id ="Base_Column_2">
+        r.id,
+        r.name,   
+        r.code,
+        r.description,
+        r.engine_id,
+        r.priority,
+	    r.parent_id,    
+	    r.user_id,
+	    r.author,
+	    r.organ_id,
+	    r.engine_id,
+	    r.status,
+	    r.type,
+	    r.is_non,
+	    r.rule_audit,
+	    r.score,
+	    r.last_logical,
+	    r.created,
+	    r.updated,
+	    r.rule_type     
+    </sql>
+
+
+    <select id="getRuleList" parameterType="Map" resultMap="ruleMap">
+        <if test="type == 2">
+            select * from (
+        </if>
+        select
+        <include refid="Base_Column"/>
+        from t_rule r left join t_user u on r.author = u.user_id
+        where 1=1
+        <if test="parentIds != null and parentIds.size() > 0">
+            and r.parent_id in
+            <foreach collection="parentIds" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="status != null">
+            and r.status in
+            <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="key!=null and value!=null">
+            <choose>
+                <when test="key=='ruleName'">
+                    and r.name like CONCAT('%',#{value},'%' )
+                </when>
+            </choose>
+        </if>
+        <if test="type == 0">
+            and r.type = 0
+        </if>
+        <if test="type == 1">
+            and r.organ_id = #{organId}
+            and r.type = 1
+            order by updated desc
+        </if>
+        <if test="type == 2">
+            and r.engine_id = #{engineId}
+            and r.type = 2
+            union
+            select
+            <choose>
+                <when test="engineId!='' and engineId!=null">
+                    <include refid="Base_Column_1"/>
+                </when>
+                <otherwise>
+                    <include refid="Base_Column"/>
+                </otherwise>
+            </choose>
+            from
+            t_rule r left join t_user u on r.author = u.user_id
+            where 1=1
+            <if test="parentIds != null and parentIds!=''">
+                and r.parent_id in
+                <foreach collection="parentIds" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="status != null">
+                and r.status in
+                <foreach collection="status" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            and r.organ_id = #{organId}
+            <if test="key!=null and value!=null">
+                <choose>
+                    <when test="key=='ruleName'">
+                        and r.name like CONCAT('%',#{value},'%' )
+                    </when>
+                </choose>
+            </if>
+            and r.type = 1
+            and r.id in (select rule_id from t_engine_rule_rel td where engine_id = #{engineId})
+            order by updated desc
+            ) y
+        </if>
+    </select>
+
+    <select id = "getRuleIdsByParentId" parameterType="Map"  resultType="long">
+           select id from t_rule r left join t_user u on r.author = u.user_id
+           where 1=1 and r.status = 1
+           <if test ="parentIds != null and parentIds != ''">  
+               and r.parent_id in 
+               <foreach collection="parentIds" index="index" item="item"  open="(" separator="," close=")">
+			        #{item}
+			   </foreach>
+           </if>
+    </select>
+
+    <insert id = "insertSelective"   parameterType="rule" useGeneratedKeys="true" keyProperty="id"> 
+        insert into t_rule (    
+        name,   
+        code,
+        description,
+        priority,
+        parent_id,
+        user_id,
+        author,
+        <if test ="content !=null">
+        content,
+        </if>
+        <if test ="organId !=null">
+        organ_id,
+        </if>
+        <if test ="engineId!=null">
+        engine_id,
+        </if>
+        <if test ="ruleAudit!=null">
+        rule_audit,
+        </if>
+        <if test ="score!=null">
+        score,
+        </if>
+        <if test ="lastLogical!=null">
+         last_logical,
+        </if>
+        status,type,is_non,created,updated,rule_type,difficulty)
+	    values( 
+		    #{name},
+			#{code},
+	        #{description},
+	        #{priority},
+		    #{parentId},
+		    #{userId},
+		    #{author},
+		    <if test ="content !=null">
+		    	#{content},
+		    </if>
+		    <if test ="organId !=null">
+		    #{organId},
+		    </if>
+		    <if test ="engineId!=null">
+		    #{engineId},
+		    </if>
+		    <if test ="ruleAudit!=null">
+		    #{ruleAudit},
+		    </if>
+		    <if test ="score!=null">
+		     #{score},
+		    </if>
+			<if test ="lastLogical!=null">
+	         #{lastLogical},
+	        </if>
+		    #{status},#{type},#{isNon},now(), now(),#{ruleType},#{difficulty}
+		  )   
+    </insert>
+
+    <update id = "updateByPrimaryKeySelective"   parameterType="rule" > 
+       update t_rule set
+       <if test ="name != null">
+       name = #{name},   
+       </if>
+       <if test ="code != null">
+       code = #{code},
+       </if>
+       <if test ="content != null">
+       content = #{content},
+       </if>
+       <if test ="description != null">
+        description = #{description},
+       </if>
+       <if test ="priority != null">
+        priority = #{priority},
+       </if>
+       <if test ="status != null">
+	    status = #{status},
+	   </if>
+	   <if test = "type != null">
+	    type = #{type},
+	   </if>
+	   <if test = "isNon != null">
+	    is_non = #{isNon},
+	   </if>
+	   <if test = "ruleType != null">
+	    rule_type = #{ruleType},
+	   </if>
+	   <if test ="ruleAudit!=null">
+		 rule_audit =  #{ruleAudit},
+	   </if>
+	   <if test ="lastLogical!=null">
+	     last_logical = #{lastLogical},
+	   </if>
+       <if test ="difficulty!=null">
+         difficulty = #{difficulty},
+       </if>
+	   score = #{score},
+	   updated = now() where id = #{id}
+    </update>
+
+    <update id = "updateRuleStatus"  parameterType="Map" >
+       update t_rule set status = #{status} where id in
+        <foreach collection="idList" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+    
+    <select id = "selectByPrimaryKey"  parameterType = "long" resultMap = "ruleMap">
+       select <include refid = "Base_Column"/>  from t_rule r left join t_user u on r.author = u.user_id where r.id = #{id}
+    </select>
+    
+     <select id = "selectByInRoleid"   resultMap = "ruleMap">
+       select <include refid = "Base_Column"/>  from t_rule 
+        id in
+        <foreach item="item" index="index" collection="array" open="(" separator="," close=")">  
+			 #{item}  
+		</foreach>
+    </select>
+    
+    <select id = "getNodeByRuleList"  parameterType = "nodeKnowledge" resultMap = "ruleMap">
+       select <include refid = "Base_Column"/>  from t_rule r WHERE t_rule.id IN( SELECT knowledge_id FROM t_node_knowledge_rel WHERE t_node_knowledge_rel.`node_id`=#{id} 
+         AND t_node_knowledge_rel.`knowledge_type`=#{knowledge_type}  
+    </select>
+    
+    <select id = "selectnodeByInRoleid"   resultMap = "ruleMap">
+       select  r.id,
+        r.name,   
+        r.code,
+        r.description,
+        r.priority,
+	    r.parent_id,
+	    r.user_id,
+	    r.author,
+	    r.organ_id,
+	    r.engine_id,
+	    r.status,
+	    r.rule_audit,
+	    r.type,
+	    r.score,
+	    r.content,
+	    r.last_logical,
+	    r.is_non,
+	    r.created,
+	    r.updated,
+	    r.rule_type,
+        r.score_field_en,
+        r.result_field_en
+	    from t_rule r
+         where r.id in
+        <foreach item="item" index="index" collection="list" open="(" separator="," close=")">  
+			 #{item}  
+		</foreach>
+		ORDER BY priority ASC
+    </select>
+    
+    <select id = "checkByField"  parameterType = "map" resultMap = "ruleMap">
+        select r.id,r.name,r.engine_id,e.name as engineName
+          from (
+                select id,name,engine_id 
+                  from t_rule 
+                 where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                       <if test="engineId != null">
+                       and engine_id = #{engineId}
+                       </if>
+                       and status = 1
+                union all
+                select r.id,r.name,er.engine_id 
+                  from t_engine_rule_rel er left join t_rule r on er.rule_id = r.id 
+                 where r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                       <if test="engineId != null"> 
+                       and er.engine_id = #{engineId}
+                       </if>
+                       and r.status = 1
+               )r left join t_engine e on r.engine_id = e.id
+         where (exists (select 1 from (select rule_id, left(field_id,LOCATE('|',field_id)-1) as f from t_rule_field) rf 
+                                where r.id = rf.rule_id 
+                                      and rf.f in 
+                                           <foreach collection="fieldIds" item="item" index="index" open="(" separator="," close=")">  
+              	  						   #{item}
+              							   </foreach>
+              		    ) 
+                or exists (select 1 from (select rule_id, left(field_id,LOCATE('|',field_id)-1) as f from t_rule_content) rc 
+                                   where r.id = rc.rule_id 
+                                         and rc.f in 
+                                           <foreach collection="fieldIds" item="item" index="index" open="(" separator="," close=")">  
+              	                           #{item}
+              	                           </foreach> 
+              	           ) 
+               )
+       
+    </select>
+
+    <select id="countOnlyRuleName"  parameterType = "map" resultType = "int">
+        select count(name) from  t_rule  where organ_id = #{organId} and status != -1 and name = TRIM(#{name})
+         <if test="id !=null and id!=''">
+         and  id != #{id}
+        </if>
+    </select>
+    
+    <select id="countOnlyRuleCode" parameterType = "map" resultType = "int">
+        select count(code) from  t_rule  where organ_id = #{organId} and status != -1 and  code=TRIM(#{code})
+         <if test="id !=null and id!=''">
+         and id != #{id}
+        </if>
+    </select>
+    
+     <select id="getFieldIdsByRuleId"  parameterType ="java.util.List"  resultType = "string">
+        select field_id from  t_rule_field  where rule_id in  
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+       </foreach>
+       union
+       select field_id from  t_rule_content  where rule_id in  
+       <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+       </foreach>
+    </select>
+    
+    <select id="getRuleListByType"  parameterType ="map"  resultMap = "ruleMap">
+        select 
+        <include refid = "Base_Column_2"/>
+        from  t_rule r
+        where r.parent_id = #{parentId}
+        <if test="type != 2">
+		     and r.rule_type = #{type} 
+		</if>
+        <choose>
+		    <when test="ids != null">
+		      and r.id in  
+		      <foreach collection="ids" index="index" item="item" open="(" separator="," close=")">
+		           #{item}
+		       </foreach>
+		       or r.engine_id = #{engineId}
+		    </when>
+		    <otherwise>
+		      and r.engine_id = #{engineId}
+		    </otherwise>
+  		</choose>
+    </select>
+    
+    <select id = "getNodeAddOrSubRulesByNodeId" parameterType="Long"  resultMap="ruleMap">
+        select 
+        r.id,
+        r.name,   
+        r.code,
+        r.description,
+        r.priority,
+	    r.parent_id,
+	    r.user_id,
+	    r.author,
+	    r.organ_id,
+	    r.engine_id,
+	    r.status,
+	    r.rule_audit,
+	    r.type,
+	    r.score,
+	    r.content,
+	    r.last_logical,
+	    r.is_non,
+	    r.created,
+	    r.updated,
+	    r.rule_type 
+	    from t_node_knowledge_rel n left join t_rule r
+        on r.id = n.knowledge_id where n.node_id = #{nodeId} and n.knowledge_type = 1
+        and r.rule_type = 1
+    </select>
+
+    <select id="getRuleListByIds" parameterType="java.util.Map" resultType="com.risk.riskmanage.knowledge.model.Rule">
+        SELECT *
+        FROM `t_rule`
+        WHERE `id` IN
+        <foreach collection="ids" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getAllCodeNameParentId" resultType="com.risk.riskmanage.knowledge.model.Rule">
+        select code,name,parent_id from t_rule where status !=-1
+    </select>
+
+
+</mapper>

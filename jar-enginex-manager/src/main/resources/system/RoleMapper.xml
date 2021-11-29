@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.system.mapper.RoleMapper">
+
+     <resultMap type="role" id="roleMap">
+	     <id column="id" property="id"/>    
+	     <result column="name" property="name"/>    
+	     <result column="role_code" property="roleCode"/>    
+	     <result column="status" property="status"/>
+	     <result column="updateTime" property="updateTime"/>         
+     </resultMap>
+	
+	<select id="selectByExample" parameterType="role"  resultType="role">
+		 SELECT 
+		   id,name,role_code as roleCode,status,
+		   date_format(updateTime,'%Y-%m-%d %T') as updateTime
+		 FROM
+		   manager_role
+		  <trim prefix="where">
+		      status=1
+			 <if test="id != null">
+			  and id = #{id}
+			 </if>
+			 <if test="name != null and name !=''">
+			  and name like CONCAT('%',TRIM('${name}'),'%' ) 
+			 </if>	
+			 <if test="roleCode != null and roleCode !=''">
+			  and role_code like CONCAT('%',TRIM('${roleCode}'),'%' ) 
+			 </if>			    
+		  </trim>
+		  	 ORDER BY updateTime desc
+		 <if test="curRow !=null ">
+		  limit #{curRow},#{rows}
+		 </if>
+
+	</select>
+	
+	<select id="countByExample"   parameterType="role" resultType="java.lang.Integer" >
+       SELECT 
+            COUNT(id) 
+         FROM  
+            manager_role 
+         where 
+             status=1
+          <if test="id != null">
+			  and id = #{id}
+		  </if>
+		 <if test="name != null and name !=''">
+		     and name like CONCAT('%',TRIM('${name}'),'%' ) 
+		 </if>	
+		 <if test="roleCode != null and roleCode !=''">
+		     and role_code like CONCAT('%',TRIM('${roleCode}'),'%' ) 
+		 </if>	
+	</select>
+	
+	<insert id="insertSelective" parameterType="role"  >
+	   INSERT INTO 
+	       manager_role
+	    <trim prefix="(" suffix=")">
+	        <if test="name != null">
+	           name,
+	        </if> 
+	        <if test="roleCode != null">
+	           role_code,
+	        </if>
+	           status,
+	           updateTime
+	    </trim>
+	    values
+	     <trim prefix="(" suffix=")">
+	        <if test="name != null">
+	           #{name},
+	        </if> 
+	        <if test="roleCode != null">
+	           #{roleCode},
+	        </if>
+	           1,
+	           now()
+	    </trim>
+	</insert>
+	
+    <select id="isExist"  parameterType="role" resultType="java.lang.Integer" >
+         SELECT 
+            COUNT(id) 
+         FROM 
+            manager_role
+         <trim prefix="where">
+               status=1
+             <if test="id != null">
+               and id != #{id}
+             </if>
+			 <if test="name != null">
+			   and  name = #{name}
+			 </if>	
+	        <if test="roleCode != null">
+	           and role_code = #{roleCode}
+	        </if>		 	    
+		  </trim>   
+	</select>
+	
+	<update id="updateByPrimaryKeySelective" parameterType="role" >
+	   UPDATE  manager_role SET 
+		   <if test="name != null">
+		     name = #{name}
+		   </if>
+		   <if test="roleCode != null">
+		     ,role_code = #{roleCode}
+		   </if>
+		   ,updateTime = now()
+	   WHERE
+	         status=1
+	        <if test="id != null">
+	          and id = #{id}
+	        </if>	   
+	</update>
+	
+	<delete id="deleteRole" parameterType="java.lang.Integer" >
+	   UPDATE  manager_role SET
+	     status=-1
+	   WHERE
+	      id
+	    IN 
+       <foreach collection="array" item="deletIds"  open="(" separator="," close=")">  
+          #{deletIds}  
+     </foreach> 
+	</delete>
+		
+</mapper>

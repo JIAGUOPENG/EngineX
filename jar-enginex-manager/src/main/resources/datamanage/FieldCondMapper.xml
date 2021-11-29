@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.datamanage.mapper.FieldCondMapper">
+	<cache></cache>
+     <resultMap type="fieldCond" id="fieldCondMap">
+     
+	     <id column="id" property="id"/>    
+	     <result column="field_id" property="fieldId"/> 
+	     <result column="condition_value" property="conditionValue"/>  
+	     <result column="content" property="content"/>
+	     <result column="cond_field_id" property="condFieldId"/>
+	     <result column="cond_field_operator" property="condFieldOperator"/>
+	     <result column="cond_field_value" property="condFieldValue"/>
+	     <result column="cond_field_logical" property="condFieldLogical"/>
+	     <result column="created" property="created"/>
+	     
+     </resultMap>
+	
+	<insert id="createFieldCond" parameterType="java.util.List">
+	insert into t_field_condition (    field_id, condition_value, content
+	                                 , cond_field_id, cond_field_operator, cond_field_value, cond_field_logical
+	                                 , created)
+	                       values
+		<foreach collection="list" item="fieldCond" index="index" separator=",">
+		              (   #{fieldCond.fieldId}, #{fieldCond.conditionValue}, #{fieldCond.content}
+		                , #{fieldCond.condFieldId}, #{fieldCond.condFieldOperator}, #{fieldCond.condFieldValue}, #{fieldCond.condFieldLogical}
+		                , now() )
+		</foreach>
+	</insert>
+	
+	<select id="getFieldCondListById" parameterType="java.lang.Long"  resultType="fieldCond">
+		 select   field_id as fieldId, condition_value as conditionValue, content
+	            , cond_field_id as condFieldId, cond_field_operator as condFieldOperator
+	            , cond_field_value as condFieldValue, cond_field_logical as condFieldLogical
+           from t_field_condition 
+          where field_id = #{fieldId}
+	</select>
+	
+	<select id="getFieldCondList" parameterType="long"  resultType="fieldCond">
+		 select   field_id as fieldId, condition_value as conditionValue, content
+           from t_field_condition 
+          where field_id = #{id}
+          group by field_id,condition_value,content
+	</select>
+	
+	<delete id="deleteFieldCondById" parameterType="java.lang.Long" >
+	   delete from t_field_condition where field_id = #{id}
+	</delete>
+	
+		
+</mapper>

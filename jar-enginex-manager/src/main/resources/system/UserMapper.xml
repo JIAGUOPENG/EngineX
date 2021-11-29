@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.system.mapper.UserMapper">
+
+    <resultMap type="user" id="userMap">
+        <id column="id" property="id"/>
+        <result column="login_name" property="loginName"/>
+        <result column="name" property="name"/>
+        <result column="password" property="password"/>
+        <result column="email" property="email"/>
+        <result column="phone" property="phone"/>
+        <result column="dept_code" property="deptCode"/>
+        <result column="status" property="status"/>
+        <result column="updateTime" property="updateTime"/>
+    </resultMap>
+
+
+    <select id="selectByExample" parameterType="user" resultType="user">
+        SELECT
+        muser.id as id,muser.name as name,password,
+        email,phone,muser.status as status,
+        login_name as login_name, muser.dept_code as dept_code,
+        dept.org_name as dept_name,b.rolecode as role_code , b.rolename as role_name
+        FROM manager_user muser LEFT JOIN manager_organization dept ON(dept.org_code = muser.dept_code) LEFT JOIN (
+        SELECT a.id as id , GROUP_CONCAT(a.urolecode ) as
+        rolecode,GROUP_CONCAT(role.name) as rolename from
+        manager_role role,
+        (
+        SELECT userrole.role_code as urolecode,muser1.id as id from
+        manager_user muser1,manager_user_role userrole
+        where
+        muser1.id = userrole.user_id
+        ) a
+        WHERE
+        a.urolecode = role.role_code
+        and role.status = 1
+        GROUP BY id
+        ) b ON(b.id= muser.id)
+
+        where muser.status != -1
+        <if test="id != null and id != ''">
+            and muser.id = #{id}
+        </if>
+        <if test="name != null and name != ''">
+            and muser.name like CONCAT('%',TRIM('${name}'),'%' )
+        </if>
+        <if test="phone != null and phone != ''">
+            and muser.phone like CONCAT('%',TRIM('${phone}'),'%' )
+        </if>
+        <if test="deptCode != null and deptCode != ''">
+            and muser.dept_code like CONCAT('%',TRIM('${deptCode}'),'%' )
+        </if>
+        ORDER BY muser.updateTime desc
+        <if test="curRow !=null ">
+            limit #{curRow},#{rows}
+        </if>
+    </select>
+
+    <select id="countByExample" parameterType="user" resultType="java.lang.Integer">
+        SELECT
+        COUNT(id)
+        FROM
+        manager_user muser
+        WHERE
+        muser.status != -1
+        <if test="id != null and id != ''">
+            and muser.id = #{id}
+        </if>
+        <if test="name != null and name != ''">
+            and muser.name like CONCAT('%',TRIM('${name}'),'%' )
+        </if>
+        <if test="phone != null and phone != ''">
+            and muser.phone like CONCAT('%',TRIM('${phone}'),'%' )
+        </if>
+        <if test="deptCode != null and deptCode != ''">
+            and muser.dept_code like CONCAT('%',TRIM('${deptCode}'),'%' )
+        </if>
+    </select>
+
+    <insert id="insertSelective" useGeneratedKeys="true" keyProperty="id" parameterType="user">
+        INSERT INTO
+        manager_user
+        <trim prefix="(" suffix=")">
+            <if test="loginName != null">
+                login_name,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="password != null">
+                password,
+            </if>
+            <if test="email != null">
+                email,
+            </if>
+            <if test="phone != null">
+                phone,
+            </if>
+            <if test="deptCode != null">
+                dept_code,
+            </if>
+            status,
+            updateTime
+        </trim>
+        values
+        <trim prefix="(" suffix=")">
+            <if test="loginName != null">
+                #{loginName},
+            </if>
+            <if test="name != null">
+                #{name},
+            </if>
+            <if test="password != null">
+                #{password},
+            </if>
+            <if test="email != null">
+                #{email},
+            </if>
+            <if test="phone != null">
+                #{phone},
+            </if>
+            <if test="deptCode != null">
+                #{deptCode},
+            </if>
+            0,
+            now()
+        </trim>
+    </insert>
+
+    <update id="updateByPrimaryKeySelective" parameterType="user">
+        UPDATE manager_user SET
+        <if test="loginName != null">
+            login_name = #{loginName},
+        </if>
+        <if test="name != null">
+            name = #{name},
+        </if>
+        <if test="password != null">
+            password = #{password},
+        </if>
+        <if test="email != null">
+            email = #{email},
+        </if>
+        <if test="phone != null">
+            phone = #{phone},
+        </if>
+        <if test="deptCode != null">
+            dept_code = #{deptCode},
+        </if>
+        updateTime = now()
+        WHERE
+        status !=-1
+        <if test="id != null">
+            and id = #{id}
+        </if>
+    </update>
+
+    <insert id="insertUserRole" parameterType="java.util.List">
+        INSERT INTO manager_user_role
+        (user_id,role_code)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.userId},#{item.roleCode})
+        </foreach>
+    </insert>
+
+    <select id="isExist" parameterType="user" resultType="java.lang.Integer">
+        SELECT
+        COUNT(id)
+        FROM
+        manager_user
+        <trim prefix="where">
+            status != -1
+            <if test="id != null">
+                and id != #{id}
+            </if>
+            <if test="loginName != null and loginName != ''">
+                and login_name = #{loginName}
+            </if>
+            <if test="password != null and password != ''">
+                and password = #{password}
+            </if>
+        </trim>
+    </select>
+
+    <select id="selectLoginInfo" parameterType="user" resultType="user">
+        SELECT
+        user_id userId , organ_id organId,account,password,nick_name nickName,
+        email , cellphone,qq,latest_time latestTime,latest_ip latestIp,status,birth
+        FROM
+        t_user
+        <trim prefix="where">
+            1=1
+            <if test="userId != null">
+                and user_id != #{userId}
+            </if>
+            <if test="account != null and account != ''">
+                and account = #{account}
+            </if>
+            <if test="password != null and password != ''">
+                and password = #{password}
+            </if>
+        </trim>
+    </select>
+
+    <delete id="deleteUserRole" parameterType="java.lang.Integer">
+        DELETE FROM
+        manager_user_role
+        WHERE
+        user_id
+        IN
+        <foreach collection="array" item="deletIds" open="(" separator="," close=")">
+            #{deletIds}
+        </foreach>
+    </delete>
+
+    <delete id="deleteUser" parameterType="user">
+        UPDATE manager_user SET
+        status=#{status}
+        WHERE
+        id
+        IN
+        <foreach item="item" index="index" collection="deletIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="findUserMenuSet" parameterType="java.lang.String" resultType="java.lang.String">
+		SELECT DISTINCT
+		 menu.menu_code 
+		FROM
+			manager_user_role userrole,
+			manager_user user,
+			manager_menu_role menurole,
+			manager_menu menu
+		where 
+		  user.id=userrole.user_id and userrole.role_code=menurole.role_code and
+		  menurole.menu_id=menu.id
+		  and user.login_name=#{loginName} and user.status = 1 
+	</select>
+
+    <select id="findUserById" parameterType="java.lang.Integer" resultMap="userMap">
+		select
+			`user_id`, `organ_id`, `employee_id`, `account`, `password`, `nick_name`, `email`, `cellphone`, `qq`, `latest_time`, `latest_ip`, `status`, `birth`, `author`
+		from t_user
+		where user_id = #{user_id,jdbcType=INTEGER}
+	</select>
+
+    <select id="findNickNameById" parameterType="java.lang.Long" resultType="java.lang.String">
+		SELECT
+            nick_name
+		FROM
+			t_user
+		where
+		    user_id = #{id}
+	</select>
+
+</mapper>

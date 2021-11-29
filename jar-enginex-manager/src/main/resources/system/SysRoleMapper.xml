@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.risk.riskmanage.system.mapper.SysRoleMapper">
+  
+  <resultMap type='SysRole' id='roleMap'>
+    <id property='id' column='role_id' />
+    <result property='organId' column='organ_id' />
+    <result property='roleName' column='role_name' />
+    <result property='roleCode' column='role_code' />
+    <result property='roleDesc' column='role_desc' />
+    <result property='author' column='author' />
+    <result property='birth' column='birth' />
+    <result property='status' column='status' />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    role_id, organ_id, role_name, role_code, role_desc, author, birth, status
+   </sql>
+   
+  <select id='getAllSysRole' resultMap='roleMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_role where organ_id = #{organId} and status != -1 and author != "超级管理员"
+     order by role_id desc
+  </select>
+  
+  <select id='getAllRoles' resultMap='roleMap'>
+  	select
+  	<include refid="Base_Column_List" />
+  	from t_role where status != -1 and author='超级管理员' order by role_id desc
+  </select>
+  
+  <select id='findById' resultMap='roleMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_role where role_id=#{id} and organ_id = #{organId} and status != -1
+  </select>
+  
+  <select id='findByAId' resultMap='roleMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_role where role_id=#{id}  and status != -1
+  </select>
+  
+  <select id="getAllValidRole" resultMap='roleMap'>
+  	select 
+  	<include refid="Base_Column_List" />
+  	from t_role where organ_id = #{organId} and status = 1
+  	<if test="author =='超级管理员'">
+  		and author = #{author}
+  	</if>
+  	<if test="author != '超级管理员'">
+  		and author != "超级管理员"
+  	</if>
+  	order by role_id
+  </select>
+  
+  <select id="getOrganByRoleId" resultType='java.lang.Long'>
+  	select 
+  	organ_id
+  	from t_role where role_id = #{roleId}
+  </select>
+  
+  <!-- 验证角色唯一性 -->
+  <select id="validateRoleOnly" resultMap="roleMap">
+  	select
+    <include refid="Base_Column_List" />
+    from t_role where  organ_id = #{organId} and status !=-1 
+    and role_name = #{roleName}
+    <if test="id!=null and id!='' and id!=0">
+    	and role_id != #{id}
+    </if>
+  </select>
+  
+  <!-- 查询公司管理员角色id -->
+  <select id="getOrganRoleByAuthor" resultMap="roleMap">
+  	select
+  	<include refid="Base_Column_List" />
+  	from t_role where organ_id = #{organId} and author = #{author} and status != -1
+  </select>
+  
+  <insert id="createSysRole" parameterType="SysRole">
+    insert into t_role (role_id, organ_id, role_name, role_code, role_desc, author, birth, status)
+    values (#{id}, #{organId}, #{roleName}, #{roleCode}, #{roleDesc}, #{author}, now(), 1)
+  </insert>
+  
+  <insert id="createOrganRole" parameterType="SysRole">
+    insert into t_role (role_id, organ_id, role_name, role_code, role_desc, author, birth, status)
+    values (#{id}, #{organId}, #{roleName}, #{roleCode}, #{roleDesc}, #{author}, now(), 1)
+  </insert>
+  
+  <update id="updateSysRole" parameterType="SysRole">
+    update t_role set
+      <if test="organId != null and organId != ''">
+          organ_id=#{organId},
+      </if>
+       <if test="roleDesc != null and roleDesc != ''">
+       role_desc=#{roleDesc},
+   	   </if>
+       <if test="roleCode != null and roleCode != ''">
+       role_code=#{roleCode}, 
+   	   </if>
+   	   role_name=#{roleName}
+    where role_id = #{id}
+  </update>
+  
+  <delete id='deleteSysRole' parameterType='java.lang.Long'>
+    update t_role set status = -1 where role_id = #{id}
+  </delete>
+  
+  <update id="updateStatus">
+    update t_role set status=#{status}
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    role_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </update>
+  
+  <update id="deleteAllRoles">
+  	update t_role set status = -1 where organ_id = #{organId}
+  </update>
+  
+  <update id="deleteRolesByOrgans">
+    update t_role set status = #{status}
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    organ_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </update>
+</mapper>

@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.risk.riskmanage.system.mapper.SysUserMapper">
+  
+  <resultMap type='SysUser' id='userMap'>
+    <id property='id' column='user_id' />
+    <result property='organId' column='organ_id' />
+    <result property='employeeId' column='employee_id' />
+    <result property='account' column='account' />
+    <result property='password' column='password' />
+    <result property='nickName' column='nick_name' />
+    <result property='email' column='email' />
+    <result property='cellphone' column='cellphone' />
+    <result property='qq' column='qq' />
+    <result property='latestTime' column='latest_time' />
+    <result property='latestIp' column='latest_ip' />
+    <result property='status' column='status' />
+    <result property='birth' column='birth' />
+    <result property='author' column='author' />
+    
+    <association property="sysRole" javaType="SysRole">
+      <id property='id' column='role_id' />
+      <result property='roleName' column='role_name' />
+      <result property='roleCode' column='role_code' />
+    </association>
+    
+    <association property="sysOrgan" javaType="SysOrganization">
+      <id property='id' column='organ_id' />
+      <result property='name' column='name' />
+    </association>
+  </resultMap>
+ 	
+   <sql id="Base_Column_List" >
+    user_id, organ_id, employee_id, account, password, nick_name, email, cellphone, qq, latest_time, latest_ip, status, birth, author
+   </sql>  
+      
+  <!-- 查询搜索用户 -->
+  <select id='getAllUsers' resultMap='userMap'>
+    select 
+    	 u.user_id, u.organ_id, u.employee_id, u.account, u.password, u.nick_name, u.email, u.cellphone, u.qq,u.latest_time,u.latest_ip,u.status,u.birth,u.author,
+    	 r.role_id, r.role_name, r.role_code,
+    	 g.organ_id, g.name
+    from 
+    	 t_user u, t_user_role_rel urr, t_role r, t_organization g 
+    where 
+    	 u.user_id = urr.user_id and r.role_id = urr.role_id
+    	 and g.organ_id = u.organ_id
+    <if test="account != null and account != ''">
+    	and (u.account = #{account}	or u.employee_id = #{account})
+    </if>
+    <if test="organId != null and organId !='' and organId != 1">
+    	and u.organ_id = #{organId} and u.author != '超级管理员'
+    </if>
+    <if test="organId != null and organId !='' and organId == 1">
+    	and u.author = '超级管理员' 
+    </if>
+    and u.status != -1
+    order by user_id desc
+  </select>
+  
+  <!-- 查询本组织单条用户 -->
+  <select id='findById' resultMap='userMap'>
+   select u.user_id, u.organ_id, u.employee_id,u.account, u.password, u.nick_name, u.email, u.cellphone, u.qq,u.latest_time,u.latest_ip,u.status,u.birth,u.author,
+    r.role_id, r.role_name, r.role_code
+    from t_user u, t_user_role_rel urr, t_role r 
+    where u.user_id = urr.user_id and r.role_id = urr.role_id and u.user_id = #{id} 
+    <if test="organId !=null and organId!='' and organId !=1">
+    	and u.organ_id = #{organId}
+    </if>
+    and u.status != -1
+  </select>
+    
+  <!-- 通过用户id查询角色 --> 
+  <select id="findRoleByUserId" resultMap='userMap'>
+  	select r.role_id, r.role_name from t_user u, t_user_role_rel ur, t_role r
+	where u.user_id = ur.user_id and r.role_id = ur.role_id and u.user_id = #{userId} and r.status=1	
+  </select>
+  
+  <!-- 本公司账号员工编号唯一性 -->
+  <select id="validateUserOnly" resultMap='userMap'>
+ 	select account,employee_id 
+ 	from t_user where (account = #{account} or employee_id = #{employeeId}) 
+ 	and organ_id = #{organId} and STATUS != -1
+ 	<if test="id!=null and id!='' and id!=0">
+ 		and user_id != #{id}
+ 	</if>
+  </select>
+  
+  <!-- 查询角色下的所有账号 -->
+  <select id="getUserIdsByRoleId" resultType ='java.lang.Long'>
+  	select user_id from t_user_role_rel where role_id = #{roleId}
+  </select>
+  
+  <!-- 批量查询角色关联的账号 -->
+  <select id="getBatchUserIdsByRoleId" resultType ='java.lang.Long'>
+   	select user_id from t_user_role_rel
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    role_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </select>
+  
+  <!-- 保存用户  -->
+  <insert id="createSysUser" useGeneratedKeys="true" keyProperty="id" parameterType="SysUser">
+    insert into t_user (organ_id, employee_id, account, password, nick_name, email, cellphone, qq, latest_time, latest_ip, status, birth, author)
+    values (#{organId}, #{employeeId}, #{account}, #{password}, #{nickName}, #{email}, #{cellphone}, #{qq}, #{latestTime}, #{latestIp}, 1, now(), #{author})
+  </insert>
+  
+  <!-- 保存用户角色关系 -->
+  <insert id="insertUserRole" parameterType="SysUser">
+    insert into t_user_role_rel (user_id, role_id,organ_id)
+    values (#{userId}, #{roleId},#{organId})
+  </insert>
+  
+  <!-- 修改用户 -->
+  <update id="updateSysUser" parameterType="SysUser">
+    update t_user set account=#{account},
+      <if test="organId != null and organId != ''">
+          organ_id=#{organId},
+      </if>
+    <if test="password != null and password != ''">
+    password = #{password},
+    </if>
+    <if test="employeeId != null and employeeId != ''">
+    employee_id=#{employeeId},
+    </if>
+    <if test="email != null and email != ''">
+    email=#{email},
+    </if>
+    <if test="cellphone != null and cellphone !=''">
+    cellphone=#{cellphone},
+    </if>
+    <if test="qq != null and qq != ''">
+     qq=#{qq},
+    </if>
+    <if test="latestTime != null and latestTime !=''">
+    latest_time=#{latestTime}, 
+    </if>
+    <if test="latestIp != null and latestIp !=''">
+    latest_ip=#{latestIp},
+    </if>
+    <if test="birth != null and birth !=''">
+    birth=#{birth}, 
+    </if>
+    <if test="author != null and author != ''">
+    	author=#{author},
+    </if>
+    nick_name=#{nickName}
+    where user_id=#{id}
+  </update>
+  
+  <!-- 修改用户角色关系 -->
+  <update id="updateUserRole" parameterType="SysUser">
+    update t_user_role_rel set
+      <if test="organId != null and organId != ''">
+          organ_id=#{organId},
+      </if>
+    user_id=#{id}, role_id=#{sysRole.id}
+    where user_id=#{id}
+  </update>
+  
+  <!-- 删除单个用户 -->
+  <delete id='deleteSysUser' parameterType='java.lang.Long'>
+   	update t_user set status=-1
+    where user_id=#{id}
+  </delete>
+  
+  <!-- 批量删除、修改用户状态 -->
+  <update id="updateStates">
+    update t_user set status=#{status}
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    user_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </update>
+  
+  <!-- 重置密码 -->
+  <update id="resetPassword" parameterType="SysUser">
+  	update t_user set password = #{password} where user_id=#{id}
+  </update>
+  
+  <!-- 修改密码 -->
+  <update id="updatePassword" parameterType="SysUser">
+  	update t_user set password = #{password} where user_id=#{id}
+  </update>
+  
+  <!-- 删除本公司所有账号 -->
+  <update id="deleteAllUser">
+  	update t_user set status = -1 where organ_id=#{organId}
+  </update>
+  
+  <!-- 删除本公司所有用户角色关系 -->
+  <update id="deleteAllUserRole">
+  	update t_user_role_rel set status = -1 where organ_id = #{organId}
+  </update>
+  
+  <update id="deleteUsersByOrgans">
+    update t_user set status = #{status}
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    organ_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </update>
+  
+  <update id="deleteUserRoleByOrgan">
+    update t_user_role_rel set status = #{status}
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    organ_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </update>
+  
+  <!-- 删除角色用户关系 -->
+  <update id="deleteUserRoleById">
+  	 update t_user_role_rel set status = -1 where role_id = #{roleId}
+  </update>
+  
+  <!-- 删除角色下的所有用户 -->
+   <update id="deleteUsersByIds">
+    update t_user set status = #{status}
+    <where>
+    		<!--<if test="list!=null and list.size()>0">-->
+   		    user_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			<!--</if>-->
+	</where>
+  </update>
+  
+  <!-- 批量删除角色账号关系 -->
+   <update id="deleteBatchUserRole">
+     update t_user_role_rel set status = #{status}
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    role_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </update>
+  
+</mapper>

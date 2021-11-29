@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.datamanage.mapper.FieldTypeUserMapper">
+    <cache></cache>
+     <resultMap type="fieldTypeUser" id="fieldTypeUserMap">
+	     <id column="id" property="id"/>    
+	     <result column="field_typeid" property="fieldTypeId"/>    
+	     <result column="organ_id" property="organId"/>
+	     <result column="engine_id" property="engineId"/>
+	     <result column="user_id" property="userId"/>
+     </resultMap>
+     
+    <insert id="createFieldTypeUserRel" useGeneratedKeys="true" keyProperty="id" parameterType="fieldTypeUser">
+	   insert into t_field_type_user_rel ( field_typeid, organ_id, engine_id, user_id, created )
+                                  values ( #{fieldTypeId}, #{organId}, #{engineId}, #{userId}, now() )
+	</insert>
+	
+	<insert id="batchBindEngineFieldTypeUserRel" parameterType="map">
+	   insert into t_field_type_user_rel ( field_typeid, organ_id, engine_id, user_id, created )
+       select field_typeid, organ_id, #{engineId}, #{userId}, now()
+         from t_field_type_user_rel r
+        where r.field_typeid in
+              <foreach collection="fieldTypeIds" item="item" index="index" open="(" separator="," close=")">  
+                #{item}
+              </foreach>
+              and field_typeid not in ( select field_typeid from t_field_type_user_rel where engine_id = #{engineId})
+              and engine_id is null
+	</insert>
+	
+	<select id="findNodeIds" parameterType="map"  resultType="String">
+		 select group_concat(field_typeid)
+           from t_field_type_user_rel x
+          where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                and engine_id = #{engineId}
+                and exists (select field_typeid 
+                              from t_field_type_user_rel y 
+                             where x.field_typeid = y.field_typeid 
+                                   and y.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                                   and y.engine_id is null
+                            )
+	</select>
+	
+	<insert id="deleteFieldTypeUserRel" parameterType="map">
+	   delete from t_field_type_user_rel
+	    where 
+	         organ_id = ( select organ_id from t_user where user_id = #{userId} )
+             <if test="engineId != null">
+             and engine_id = #{engineId}
+             </if>
+             <if test="engineId == null">
+             and engine_id is null
+             </if>
+	         and field_typeid = #{fieldTypeId}
+	</insert>
+	
+	<update id="updateFieldTypeUserRel" >
+       update t_field_type_user_rel
+          set   user_id = #{userId}, created = now()
+            <if test="status != null">
+                ,status = #{status}
+            </if>
+        where organ_id =#{organId}
+        and field_typeid = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.datamanage.mapper.FieldTypeMapper">
+    <cache></cache>
+     <resultMap type="com.risk.riskmanage.datamanage.model.FieldType" id="fieldTypeMap">
+	     <id column="id" property="id"/>    
+	     <result column="field_type" property="fieldType"/>    
+	     <result column="parent_id" property="parentId"/>
+	     <result column="is_common" property="isCommon"/>
+	     <result column="type" property="type"/>
+     </resultMap>
+	
+	<select id="getFieldTypeList" parameterType="map" resultType="fieldType">
+		select r.field_typeid as id,t.field_type as fieldType,t.parent_id as parentId,t.is_common as isCommon,#{engineId} as engineId
+          from t_field_type_user_rel r, t_field_type t
+         where r.field_typeid = t.id
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+           <if test="isCommon != null">
+         	   and t.is_common = #{isCommon}
+           </if>
+           <if test="engineId == null">
+               and r.engine_id is null
+           </if>
+           <if test="engineId != null">
+               and r.engine_id = #{engineId}
+           </if>
+           <if test="parentId == null">
+               and t.parent_id = 0
+           </if>
+           <if test="parentId != null">
+               and t.parent_id = #{parentId}
+           </if>
+           <if test="status != null">
+               and r.status = #{status}
+           </if>
+           
+       order by t.is_common desc,r.created,t.id
+	</select>
+	
+	<select id='findIdByFieldType' parameterType="map" resultType="java.lang.Long">
+         select IFNULL(MAX(t.id),0) as id
+         from t_field_type t,t_field_type_user_rel r
+         where t.id = r.field_typeid
+               and t.field_type = #{fieldType}
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+           <if test="engineId != null">
+               and r.engine_id = #{engineId}
+           </if>
+           <if test="engineId == null">
+               and r.engine_id is null
+           </if>
+           <if test="parentId == null">
+               and t.parent_id = 0
+           </if>
+           <if test="parentId != null">
+               and t.parent_id = #{parentId}
+           </if>
+    </select>
+    
+    <select id='findFieldTypeById' parameterType="java.lang.Integer" resultType="fieldType">
+         select id, field_type as fieldType, parent_id as parentId
+           from t_field_type
+          where id = #{id}
+    </select>
+    
+    <select id='findTypeIdByParentId' parameterType="map" resultType="String">
+          select group_concat(t.id) as id 
+            from t_field_type t,t_field_type_user_rel r 
+           where t.id = r.field_typeid
+                 and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                 and r.engine_id = #{engineId}
+                 and t.parent_id = #{parentId}
+    </select>
+    
+    <select id='findParentIdByTypeId' parameterType="map" resultType="String">
+          select t.parent_id as parentId
+            from t_field_type t,t_field_type_user_rel r
+           where t.id = r.field_typeid
+                 and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                 <if test="engineId != null">
+                 and r.engine_id = #{engineId} 
+                 </if>
+                 <if test="engineId == null">
+                 and r.engine_id is null
+                 </if>
+                 and t.id = ${fieldTypeId}
+    </select>
+    
+    <select id='findFieldType' parameterType="java.lang.Integer" resultType="fieldType">
+         select t.id, t.field_type as fieldType, t.parent_id as parentId
+           from t_field_type t,t_field_type_user_rel r
+          where t.id = r.field_typeid
+                and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+                <if test="engineId != null">
+                and r.engine_id = #{engineId}
+                and r.field_typeid not in ( select field_typeid from t_field_type_user_rel where engine_id is null )
+                </if>
+                <if test="engineId == null">
+                and r.engine_id is null
+                </if>
+    </select>
+    
+	<insert id="createFieldType" useGeneratedKeys="true" keyProperty="id" parameterType="fieldType">
+	   insert into t_field_type ( field_type, parent_id, is_common ,type)
+                         values ( #{fieldType}, #{parentId}, #{isCommon} ,#{type})
+	</insert>
+	
+	<update id="updateFieldType" parameterType="map">
+       update t_field_type
+          set   field_type = #{fieldType}
+        where id = #{id}
+    </update>
+    
+    <update id="updateFieldTypeByTypeIds" parameterType="map">
+       update t_field_type_user_rel
+          set status = -1
+        where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              and engine_id = #{engineId}
+              and field_typeid in
+                  <foreach collection="fieldTypeIds" item="item" index="index" open="(" separator="," close=")">  
+                  #{item}
+                  </foreach>
+              and status = 1
+    </update>
+    
+    <update id="deleteFieldTypeByTypeIds" parameterType="map">
+       delete from t_field_type_user_rel
+        where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              and engine_id = #{engineId}
+              and field_typeid in
+                  <foreach collection="fieldTypeIds" item="item" index="index" open="(" separator="," close=")">  
+                  #{item}
+                  </foreach>
+              and field_typeid not in
+                     ( select field_typeid 
+                         from t_field f,t_field_user_rel r 
+                        where f.id = r.field_id 
+                              and f.field_typeid in 
+								  <foreach collection="fieldTypeIds" item="item" index="index" open="(" separator="," close=")">  
+								  #{item}
+								  </foreach>
+					 )
+    </update>
+    
+    <update id="backFieldTypeByTypeIds" parameterType="map">
+       update t_field_type_user_rel
+          set status = 1
+        where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              and engine_id = #{engineId}
+              and field_typeid in
+                  <foreach collection="fieldTypeIds" item="item" index="index" open="(" separator="," close=")">  
+                  #{item}
+                  </foreach>
+              and status = -1
+    </update>
+    
+    <select id="isExists" parameterType="map"  resultType="java.lang.Integer">
+         select count(ft.id)
+         from t_field_type ft,t_field_type_user_rel r
+         where ft.id = r.field_typeid
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+               and ft.field_type = #{fieldType}
+               <if test="Id != null">
+               and ft.id != #{Id}
+               </if>
+               <if test="engineId != null">
+               and r.engine_id = #{engineId}
+               </if>
+               <if test="engineId == null">
+               and r.engine_id is null
+               </if>
+               and ft.parent_id = #{parentId}
+	</select>
+	
+	<select id="isExistsDefaultTreeName" parameterType="map"  resultType="java.lang.Integer">
+         select count(ft.id)
+         from t_field_type ft,t_field_type_user_rel r
+         where ft.id = r.field_typeid
+               and r.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+               and ft.field_type = #{fieldType}
+               <if test="engineId != null">
+               and r.engine_id = #{engineId}
+               </if>
+               <if test="engineId == null">
+               and r.engine_id is null
+               </if>
+               and ft.parent_id = #{parentId}
+	</select>
+	<select id="selectFieldTypeList"  resultMap="fieldTypeMap">
+          select id,field_type,parent_id,is_common,`type`
+          from t_field_type
+          where id in (select distinct field_typeid from t_field_type_user_rel where organ_id = #{organId} and status !=-1)
+          and `type` = #{type}
+    </select>
+</mapper>

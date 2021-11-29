@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.logger.mapper.LoggerMapper">
+
+     <resultMap type="com.risk.riskmanage.logger.model.Logger" id="loggerMap">
+	    <id column="id" property="id"/>    
+		<result column="op_type" property="opType"/> 
+		<result column="op_name" property="opName"/> 
+		<result column="op_user_id" property="opUserId"/> 
+		<result column="nick_name" property="opUserName"/>
+		<result column="organ_id" property="organId"/>
+		<result column="organ_name" property="organName"/>
+		<result column="method" property="method"/> 
+		<result column="request_path" property="requestPath"/> 
+		<result column="request_param" property="requestParam"/> 
+		<result column="response_param" property="responseParam"/> 
+		<result column="ip" property="ip"/> 
+		<result column="start_time" property="startTime"/> 
+		<result column="end_time" property="endTime"/> 
+    </resultMap>   
+    
+    <sql id="Base_Column">
+    	l.id,    
+		l.op_type,
+		l.op_name,
+		l.op_user_id,
+		u.nick_name,
+		o.name as organ_name,
+		l.organ_id,
+		l.method,
+		l.request_path,
+		l.request_param,
+		l.response_param,
+		l.ip,
+		l.start_time,
+		l.end_time
+    </sql>
+
+    <insert id = "insertSelective"   parameterType="map"> 
+        insert into t_logger  (op_type,op_name,op_user_id,organ_id,method,request_path,request_param,response_param,ip,start_time,end_time)
+	    values(#{opType},#{opName},#{opUserId},#{organId},#{method},#{requestPath},#{requestParam},#{responseParam},#{ip},#{startTime},#{endTime})   
+    </insert>
+    
+     <select id ="getLogList" parameterType="map" resultMap="loggerMap">
+         select  <include refid="Base_Column"/>  from t_logger l  left join  t_user u on l.op_user_id = u.user_id left join t_organization o on u.organ_id = o.organ_id  where 1=1 and 
+         <if test ="organId != null">
+             l.organ_id = #{organId} and 
+         </if>
+         <if test="searchKey!=null and searchKey!=''">
+           l.op_name  like  CONCAT('%',#{searchKey},'%' ) and 
+         </if>
+         date(l.start_time) &gt;= #{startDate} and date(l.start_time) &lt;=#{endDate} order by l.start_time desc
+     </select>
+     
+      <select id ="selectByPrimaryKey" parameterType="map" resultMap="loggerMap">
+         select  <include refid="Base_Column"/>  from  t_logger l  left join  t_user u on l.op_user_id = u.user_id  left join t_organization o on u.organ_id = o.organ_id  where l.id = #{id} 
+     </select>
+
+	<select id ="getLastLoginInfo" parameterType="java.lang.Long" resultType="java.util.Date">
+		SELECT
+		t.`start_time`
+		FROM
+		  `t_logger` t
+		WHERE t.`op_user_id` = #{userId}
+		  AND t.`op_type` = 'login'
+		ORDER BY t.`start_time` DESC
+		LIMIT 2
+	</select>
+
+</mapper>

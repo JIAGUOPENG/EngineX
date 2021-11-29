@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.datamanage.mapper.FieldUserMapper">
+    <cache></cache>
+     <resultMap type="fieldUser" id="fieldUserMap">
+	     <id column="id" property="id"/>    
+	     <result column="field_id" property="fieldId"/>    
+	     <result column="organ_id" property="organId"/>
+	     <result column="engine_id" property="engineId"/>
+	     <result column="user_id" property="userId"/>
+	     <result column="status" property="status"/>
+     </resultMap>
+     
+    <insert id="createFieldUserRel" useGeneratedKeys="true" keyProperty="id" parameterType="fieldUser">
+	   insert into t_field_user_rel (field_id, organ_id, engine_id, user_id, status, created, updated)
+       values (#{fieldId}, #{organId}, #{engineId}, #{userId}, #{status}, now(), now())
+	</insert>
+	
+	<insert id="batchCreateFieldUserRel" parameterType="map">
+	   insert into t_field_user_rel (field_id, organ_id, engine_id, user_id, status, created, updated)
+       select id, #{organId}, #{engineId}, #{userId}, #{status}, now(), now()
+         from t_field t
+        where t.author = #{author}
+          and not exists ( select r.field_id from t_field_user_rel r where t.id = r.field_id )
+	</insert>
+	
+	<insert id="batchCreateEngineFieldUserRel" parameterType="map">
+	   insert into t_field_user_rel (field_id, organ_id, engine_id, user_id, status, created, updated)
+       select id, #{organId}, #{engineId}, #{userId}, #{status}, now(), now()
+         from t_field f
+        where f.field_typeid in
+              <foreach collection="fieldTypeIds" item="item" index="index" open="(" separator="," close=")">  
+                #{item}
+              </foreach>
+              and not exists ( select 1 
+                                 from (	select f.id,f.field_en,f.field_cn 
+								          from t_field f,t_field_user_rel fu 
+										 where f.id = fu.field_id 
+										       and fu.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+											   and fu.engine_id = ${engineId} )y
+								where f.field_en = y.field_en or f.field_cn = y.field_cn or f.id = y.id
+                              )
+	</insert>
+	
+	<insert id="batchBindEngineFieldUserRel" parameterType="map">
+	   insert into t_field_user_rel (field_id, organ_id, engine_id, user_id, status, created, updated)
+       select id, #{organId}, #{engineId}, #{userId}, 1, now(), now()
+         from t_field f
+        where f.id in
+              <foreach collection="fieldIds" item="item" index="index" open="(" separator="," close=")">  
+                #{item}
+              </foreach>
+              and not exists ( select 1 
+                                 from (	select f.id,f.field_en,f.field_cn 
+								          from t_field f,t_field_user_rel fu 
+										 where f.id = fu.field_id 
+										       and fu.organ_id = ( select organ_id from t_user where user_id = #{userId} )
+											   and fu.engine_id = ${engineId} )y
+								where f.field_en = y.field_en or f.field_cn = y.field_cn or f.id = y.id
+                              )
+	</insert>
+	
+	<update id="updateFieldUserRel" parameterType="map">
+       update t_field_user_rel
+          set user_id = #{userId} , updated = now()
+        where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              <if test="engineId != null">
+              and engine_id = #{engineId}
+              </if>
+              <if test="engineId == null">
+              and engine_id is null
+              </if>
+              and field_id = #{Id}
+    </update>
+    
+	<update id="updateStatus" parameterType="map">
+       update t_field_user_rel
+          set status=#{status} 
+        where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              <if test="engineId != null">
+                and engine_id = #{engineId}
+              </if>
+              <if test="engineId == null and status!=-1 and status!=0">
+                and engine_id is null
+              </if>
+              and field_id in
+              <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                #{item}
+              </foreach>
+    </update>
+    
+        <update id="deleteFieldByIds" parameterType="map">
+       update t_field_user_rel
+          set status = -1
+        where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              and engine_id = #{engineId}
+              and field_id in
+                  <foreach collection="fieldIds" item="item" index="index" open="(" separator="," close=")">  
+                  #{item}
+                  </foreach>
+              and status = 1
+    </update>
+    
+    <update id="backFieldByIds" parameterType="map">
+       update t_field_user_rel
+          set status = 1
+        where organ_id = ( select organ_id from t_user where user_id = #{userId} )
+              and engine_id = #{engineId}
+              and field_id in
+                  <foreach collection="Ids" item="item" index="index" open="(" separator="," close=")">  
+                  #{item}
+                  </foreach>
+              and status = -1
+    </update>
+    
+</mapper>

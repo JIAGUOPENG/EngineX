@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.risk.riskmanage.system.mapper.SysMenuMapper">
+  
+  <resultMap type='SysMenu' id='menuMap'>
+    <id property='id' column='resource_id' />
+    <result property='userId' column='user_id' />
+    <result property='name' column='name' />
+    <result property='code' column='code' />
+    <result property='url' column='url' />
+    <result property='parentId' column='parent_id' />
+    <result property='des' column='des' />
+    <result property='birth' column='birth' />
+    <result property='icon' column='icon' />
+    <result property='sort' column='sort' />
+    <result property='status' column='status' />
+  </resultMap>
+  
+  <sql id="Base_Column_List" >
+    resource_id, user_id, name, code, url, parent_id, des, birth, icon, sort, status
+   </sql>
+  
+  <select id='getAllSysMenu' resultMap='menuMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_resource  where status != -1
+    order by resource_id 
+  </select>
+  
+  <select id='findById' resultMap='menuMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_resource 
+    where resource_id = #{id} and status !=-1
+  </select>
+  <!-- 通过父节点查询子节点 -->
+  <select id='findChildByParent' resultMap='menuMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_resource 
+    where parent_id = #{parentId} and status = 1 ORDER BY sort ASC
+  </select>
+  <!-- 通过角色菜单关系及父节点查询菜单 -->
+   <select id='findRoleMenuByParent' resultMap='menuMap'>
+    select 
+    re.resource_id, re.user_id, re.name, re.code, re.url, re.parent_id, re.des, re.birth, re.icon, re.status
+	from t_role ro, t_role_resource_rel rr, t_resource re  
+	where ro.role_id = rr.role_id AND rr.resource_id = re.resource_id 
+	and re.parent_id = #{parentId} and rr.role_id = #{roleId} and re.status = 1 ORDER BY re.sort ASC
+  </select>
+  <!-- 分配资源树 -->
+   <select id='findTreeList' resultMap='menuMap'>
+    select 
+    re.resource_id, re.user_id, re.name, re.code, re.url, re.parent_id, re.des, re.birth, re.icon, re.status
+	from t_role ro, t_role_resource_rel rr, t_resource re  
+	where ro.role_id = rr.role_id AND rr.resource_id = re.resource_id 
+	and  rr.role_id = #{roleId} and re.status = 1 order by re.sort asc
+  </select>
+  <!-- 查询所有可用资源 -->
+  <select id="getAllValidMenu" resultMap="menuMap">
+  	select
+  	<include refid="Base_Column_List" />
+  	from t_resource
+  	where  status = 1 order by sort asc
+  </select>
+  <!-- 查询引擎树资源 -->
+  <select id="getEngineTree" resultType="map">
+ 	select id_str from t_role_engine where role_id = #{roleId}
+  </select>
+  <!-- 验证唯一性 -->
+  <select id='validateMenuOnly' resultMap='menuMap' parameterType="SysMenu">
+    select 
+    <include refid="Base_Column_List" />
+    from t_resource 
+    where  (name = #{name} or code = #{code}) 
+    	and status != -1 
+    <if test="id != null and id !='' and id !=0">
+     	and resource_id != #{id}
+    </if>
+  </select>
+  
+   <!-- 判断是否有权限查看资源 -->
+  <select id="validatePermission" resultMap ='menuMap'>	
+  	select 
+    re.resource_id, re.user_id, re.name, re.code, re.url, re.parent_id, re.des, re.birth, re.icon, re.status
+	from t_role ro, t_role_resource_rel rr, t_resource re  
+	where ro.role_id = rr.role_id AND rr.resource_id = re.resource_id 
+	and  rr.role_id = #{roleId} and re.status = 1 and re.url = #{url}
+  </select>
+  
+  <!-- 查看是否有权限访问该引擎 -->
+  <select id="validateEnginePermission" resultType="map">	
+  	select id_str from t_role_engine where role_id = #{roleId} and id_str = #{id_e}
+  </select>
+  
+  <insert id="createSysMenu" parameterType="SysMenu">
+    insert into t_resource (user_id, name, code, url, parent_id, des, birth, icon, sort)
+    values (#{userId}, #{name}, #{code}, #{url}, #{parentId}, #{des}, now(), #{icon}, #{sort})
+  </insert>
+  
+   <!--保存菜单角色关系 -->
+  <insert id="insertRoleMenu">
+   	insert into t_role_resource_rel (role_id, resource_id)
+    values 
+    <foreach collection="list" item="ids" index="index" separator="," >  
+        (#{roleId}, #{ids})  
+    </foreach>  
+  </insert>
+    
+  <!-- 保存引擎树 -->
+  <insert id="insertRoleEngine">
+  	insert into t_role_engine (role_id, id_str)
+    values 
+    <foreach collection="list" item="ids" index="index" separator="," >  
+        (#{roleId}, #{ids})  
+    </foreach>  
+  </insert>
+  
+  <update id="updateSysMenu" parameterType="SysMenu">
+    update t_resource set  name=#{name}, 
+      	url=#{url}, 
+      <if test="des != null and des !=''">
+      	des=#{des},
+      </if> 
+      <if test="icon != null and icon !=''">
+      	icon=#{icon},
+      </if>
+      <if test="userId != null and userId !=''">
+    	user_id=#{userId},
+      </if>
+      <if test="parentId != null and parentId !=''">
+     	 parent_id=#{parentId},
+      </if>
+      <if test="sort != null">
+          sort=#{sort},
+      </if>
+      	code=#{code}
+    where resource_id = #{id}
+  </update>
+  
+  <delete id='deleteSysMenu' parameterType='java.lang.Long'>
+    update t_resource set status = -1  where resource_id = #{id}
+  </delete>
+  
+  <!-- 删除菜单角色关系 -->
+  <delete id="deleteRoleMenu">
+  	delete from t_role_resource_rel where role_id = #{roleId}
+  </delete>
+  
+  <!-- 删除引擎树 -->
+  <delete id="deleteRoleEngine">
+  	delete from t_role_engine where role_id = #{roleId}
+  </delete>
+  
+  <update id="updateStatus">
+    update t_resource set status=#{status}
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    resource_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </update>
+</mapper>

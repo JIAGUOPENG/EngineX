@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.knowledge.mapper.EngineRuleRelMapper">
+    <cache></cache>
+     <resultMap type="engineRuleRel" id="engineRuleRelMap">
+	     <id column="id" property="id"/>    
+	     <result column="engine_id" property="engineId"/>         
+	     <result column="knowledge_tree_id" property="treeId"/>  
+    </resultMap>
+    
+    <sql id ="Base_Column">
+   	     id 
+	     engine_id as engineId,
+	     rule_id as ruleId         
+    </sql>
+    
+    <select  id ="getRuleIdsByEngineId"  parameterType="long"  resultType="long">
+        select rule_id from t_engine_rule_rel td where engine_id = #{engineId}
+    </select>
+    
+    <insert id = "insertRel"   parameterType="map"> 
+        insert into t_engine_rule_rel  (engine_id,rule_id)
+	    values
+	    <foreach collection="idList" index="index" item="item" separator=",">
+	     (#{engineId},#{item})   
+	    </foreach>
+    </insert>
+    
+    <delete id="deleteRel" parameterType="map">
+      delete from t_engine_rule_rel where engine_id =#{engineId} 
+      <if test ="idList.size() > 0">
+           and rule_id in
+	       <foreach collection="idList" index="index" item="item"  open="(" separator="," close=")">
+		        #{item}
+		   </foreach>
+	  </if>
+    </delete>
+</mapper>

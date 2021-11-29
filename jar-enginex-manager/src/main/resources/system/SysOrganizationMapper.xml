@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.risk.riskmanage.system.mapper.SysOrganizationMapper">
+  
+  <resultMap type='sysOrganization' id='organizationMap'>
+    <id property='id' column='organ_id' />
+    <result property='name' column='name' />
+    <result property='code' column='code' />
+    <result property='email' column='email' />
+    <result property='telephone' column='telephone' />
+    <result property='status' column='status' />
+    <result property='author' column='author' />
+    <result property='birth' column='birth' />
+    <result property='token' column='token' />
+  </resultMap>
+    
+   <sql id="Base_Column_List" >
+    organ_id, name, code, email, telephone, status, birth, author,token
+   </sql>
+   
+  <select id='getAllSysOrganization' resultMap='organizationMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_organization  where status != -1 and organ_id != 1
+    order by organ_id desc
+  </select>
+  
+  <select id='getAllValidOrgan' resultMap='organizationMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_organization  where status = 1
+    order by organ_id desc
+  </select>
+  
+  <select id='findById' resultMap='organizationMap'>
+    select 
+    <include refid="Base_Column_List" />
+    from t_organization 
+    where organ_id = #{id} and status != -1
+  </select>
+  
+  <!-- 验证公司唯一性 -->
+  <select id='validateOrganOnly' resultMap='organizationMap' parameterType="SysOrganization">
+    select 
+    <include refid="Base_Column_List" />
+    from t_organization 
+    where (name = #{name} or code = #{code}) 
+    		and status != -1
+    <if test="id != null and id !='' and id !=0">
+     	and organ_id != #{id}
+    </if>
+  </select>
+  
+  <insert id="createSysOrganization" parameterType="SysOrganization" useGeneratedKeys="true" keyProperty="id">
+    insert into t_organization (name, code, email, telephone, status, author, birth, token)
+    values (#{name}, #{code}, #{email}, #{telephone}, 1, #{author}, now(), #{token})
+  </insert>
+  
+  <update id="updateSysOrganization" parameterType="SysOrganization">
+    update t_organization set name=#{name}, 
+    <if test="email != null and email != ''">
+    	email=#{email},
+    </if>
+    <if test="telephone != null and telephone!=''">
+    	telephone=#{telephone},
+    </if>
+    <if test="author != null and author !=''">
+    	author=#{author},
+    </if>
+    code=#{code}
+    where organ_id=#{id}
+  </update>
+  
+  <delete id='deleteSysOrganization' parameterType="java.lang.Long">
+    update t_organization set status = -1 where organ_id=#{id}
+  </delete>
+  
+  <update id="updateStatus">
+    update t_organization set status=#{status}
+    <where>
+    		<if test="list!=null and list.size()>0">
+   		    organ_id in 
+   		    	<foreach collection="list" item="ids" index="index" 
+					open="(" separator="," close=")">#{ids}
+			    </foreach>
+			</if>
+	</where>
+  </update>
+</mapper>

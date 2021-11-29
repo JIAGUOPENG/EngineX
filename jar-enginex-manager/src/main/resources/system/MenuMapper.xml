@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.risk.riskmanage.system.mapper.MenuMapper">
+
+     <resultMap type="menu" id="roleMap">
+	     <id column="id" property="id"/>   
+	     <id column="pid" property="pid"/>  
+	     <result column="name" property="name"/>
+	     <result column="type" property="type"/> 
+	     <result column="menu_order" property="menuOrder"/>
+	     <result column="url" property="url"/>    
+	     <result column="menu_code" property="menuCode"/>
+	     <result column="icon" property="icon"/>    
+	     <result column="status" property="status"/>
+	     <result column="updateTime" property="updateTime"/>         
+     </resultMap>
+	
+	<select id="selectByExample" parameterType="menu"  resultType="menu">
+		 SELECT 
+		   id,pid as _parentId,name,status,type,
+		   CASE type
+		    WHEN 1 THEN "open"
+		     ELSE "closed" END AS state,
+		   url,menu_code as menuCode,icon,
+		   date_format(updateTime,'%Y-%m-%d %T') as updateTime
+		 FROM
+		   manager_menu
+		  <trim prefix="where">
+		      status=1
+			 <if test="id != null">
+			  and id = #{id}
+			 </if>
+			 <if test="name != null and name !=''">
+			  and name like CONCAT('%',TRIM('${name}'),'%' ) 
+			 </if>	
+			 <if test="menuCode != null and menuCode !=''">
+			  and menu_code like CONCAT('%',TRIM('${menuCode}'),'%' ) 
+			 </if>			    
+		  </trim>
+		  	 ORDER BY updateTime desc
+	</select>
+	
+	<select id="selectByRole" parameterType="menu"  resultType="menu">
+	   SELECT 
+		   menu.id as id,name,status,menu_code as menuCode
+		 FROM
+		   manager_menu menu,manager_menu_role menurole
+       WHERE 
+          menurole.menu_id = menu.id
+		     and  status=1
+		  <if test="roleCode != null and roleCode !=''">
+			  and menurole.role_code = #{roleCode}
+		  </if>			    
+	</select>
+	
+	<select id="countByExample"   parameterType="menu" resultType="java.lang.Integer" >
+       SELECT 
+            COUNT(id) 
+         FROM  
+            manager_menu
+         where 
+             status=1
+          <if test="id != null">
+			  and id = #{id}
+		  </if>
+		 <if test="name != null and name !=''">
+		    and name like CONCAT('%',TRIM('${name}'),'%' ) 
+		 </if>	
+		 <if test="menuCode != null and menuCode !=''">
+		    and menu_code like CONCAT('%',TRIM('${menuCode}'),'%' ) 
+		 </if>	
+	</select>
+	
+	<insert id="insertSelective" parameterType="menu"  >
+	   INSERT INTO 
+	       manager_menu 
+	    <trim prefix="(" suffix=")">
+	    	 <if test="pid != null">
+	           pid,
+	        </if> 
+	        <if test="name != null">
+	           name,
+	        </if> 
+	        <if test="menuCode != null">
+	           menu_code,
+	        </if>
+	        <if test="type != null">
+	           type,
+	        </if>
+	        <if test="url != null">
+	           url,
+	        </if>
+	        <if test="icon != null">
+	           icon,
+	        </if>	        
+	           status,
+	           updateTime
+	    </trim>
+	    values
+	     <trim prefix="(" suffix=")">
+	     	<if test="pid != null">
+	           #{pid},
+	        </if> 
+	        <if test="name != null">
+	           #{name},
+	        </if> 
+	        <if test="menuCode != null">
+	           #{menuCode},
+	        </if>
+	        <if test="type != null">
+	           #{type},
+	        </if>
+	        <if test="url != null">
+	           #{url},
+	        </if>
+	        <if test="icon != null">
+	           #{icon},
+	        </if>	
+	           1,
+	           now()
+	    </trim>
+	</insert>
+	
+    <select id="isExist"  parameterType="menu" resultType="java.lang.Integer" >
+         SELECT 
+            COUNT(id) 
+         FROM 
+            manager_menu
+         <trim prefix="where">
+               status=1
+             <if test="id != null">
+               and id != #{id}
+             </if>
+			 <if test="name != null">
+			   and  name = #{name}
+			 </if>	
+	        <if test="menuCode != null">
+	           and menu_code = #{menuCode}
+	        </if>		 	    
+		  </trim>   
+	</select>
+	
+	<update id="updateByPrimaryKeySelective" parameterType="menu" >
+	   UPDATE  manager_menu SET 
+	   	     <if test="pid != null">
+	           pid = #{pid},
+	        </if> 
+	        <if test="name != null">
+	           name = #{name},
+	        </if> 
+	        <if test="type != null">
+	           type = #{type},
+	        </if>
+	        <if test="url != null">
+	           url = #{url},
+	        </if>
+	        <if test="icon != null">
+	           icon = #{icon},
+	        </if>
+		   <if test="name != null">
+		     name = #{name}
+		   </if>
+		   <if test="menuCode != null">
+		     ,menu_code = #{menuCode}
+		   </if>
+		   ,updateTime = now()
+	   WHERE
+	         status=1
+	        <if test="id != null">
+	          and id = #{id}
+	        </if>	   
+	</update>
+	
+	<delete id="deleteMenu" parameterType="java.lang.Integer" >
+	   UPDATE  manager_menu SET
+	     status=-1
+	   WHERE
+	      id
+	    IN 
+       <foreach collection="array" item="deletIds"  open="(" separator="," close=")">  
+          #{deletIds}  
+     </foreach> 
+	</delete>
+	
+	<delete id="deleteMenuRole" parameterType="menu" >
+	   DELETE FROM 
+	     manager_menu_role
+	   WHERE
+	      1=1 
+	    <if test="roleCode != null">
+	       and role_code = #{roleCode}
+	    </if>
+	</delete>
+	
+	<insert id="insertMenuRole" parameterType="menu"  >
+	   INSERT INTO 
+	       manager_menu_role
+	    <trim prefix="(" suffix=")">
+	    	 <if test="id != null">
+	           menu_id,
+	        </if> 
+	        <if test="roleCode != null">
+	           role_code
+	        </if> 
+	    </trim>
+	    values
+	     <trim prefix="(" suffix=")">
+	     	<if test="id != null">
+	           #{id},
+	        </if> 
+	        <if test="roleCode != null">
+	           #{roleCode}
+	        </if> 
+	    </trim>
+	</insert>
+	
+	<select id="findUserMenuByUser" resultType="menu">
+	 SELECT DISTINCT
+		 menu.menu_code as menuCode ,menu.id as id , icon,menu.pid as pid,
+		 menu.name as name, url,menu.status as status
+		FROM
+			manager_user muser,
+			manager_user_role userrole,
+			manager_menu_role menurole,
+			manager_menu menu
+		where 
+		  muser.id=userrole.user_id and userrole.role_code=menurole.role_code and
+		  menurole.menu_id=menu.id and muser.login_name=#{loginName} and 
+		  muser.status !=-1 and 
+		  ( 
+		     menu.pid in( SELECT id from manager_menu menu WHERE menu.pid=1) or menu.pid=1
+		  )
+	</select>
+		
+</mapper>
